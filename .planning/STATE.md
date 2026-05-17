@@ -66,5 +66,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-05-17
-Stopped at: Roadmap created — ready to plan Phase 1
-Resume file: None
+Stopped at: Phase 1 context gathered — ready to plan Phase 1
+Resume file: .planning/phases/01-foundation-security-gate/01-CONTEXT.md
