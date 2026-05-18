@@ -29,13 +29,14 @@ async function main() {
 
   // ── Token-exchange smoke test ──────────────────────────────────────────────
 
-  const url = `http://localhost:3000/${INVITE_TOKEN}/api/upload`
+  const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+  const url = `${BASE_URL}/${INVITE_TOKEN}/api/upload`
 
   const payload = {
     type: 'blob.generate-client-token',
     payload: {
       pathname: 'test/smoke.jpg',
-      callbackUrl: `http://localhost:3000/${INVITE_TOKEN}/api/upload`,
+      callbackUrl: `${BASE_URL}/${INVITE_TOKEN}/api/upload`,
       clientPayload: null,
       multipart: false,
     },
@@ -49,8 +50,8 @@ async function main() {
       body: JSON.stringify(payload),
     })
   } catch (err) {
-    console.error('ERROR: Could not reach dev server at', url)
-    console.error('Make sure `npm run dev` is running.')
+    console.error('ERROR: Could not reach server at', url)
+    console.error('For local: make sure `npm run dev` is running. For production: set BASE_URL=https://your-deploy.vercel.app')
     console.error(err)
     process.exit(1)
   }

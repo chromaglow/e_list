@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:smoke": "tsx scripts/db-smoke-test.ts",
-    "upload:smoke": "tsx scripts/upload-smoke-test.ts"
+    "upload:smoke": "tsx scripts/upload-smoke-test.ts",
+    "verify:prod": "scripts/cold-start-verify.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
