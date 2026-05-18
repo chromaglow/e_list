@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 03 complete — ListingCard Server Component done
-last_updated: "2026-05-18T23:20:00Z"
-last_activity: 2026-05-18 -- Phase 02 Plan 03 complete; ListingCard Server Component with photo, FREE badge, date, poster info
+stopped_at: Phase 02 Plan 04 complete — CreateListingForm + new listing page done
+last_updated: "2026-05-18T23:25:00Z"
+last_activity: 2026-05-18 -- Phase 02 Plan 04 complete; CreateListingForm Client Component with upload, preview, success banner; app/[token]/new page shell
 progress:
   total_phases: 3
   completed_phases: 1
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 02 (core-listing-lifecycle) — EXECUTING
-Plan: 3 of 5 — COMPLETE
-Status: Phase 02 Plan 03 complete; ListingCard Server Component ready
-Last activity: 2026-05-18 -- Phase 02 Plan 03: ListingCard Server Component with next/image, FREE badge, line-clamp-2 description, formatted date in time element
+Plan: 4 of 5 — COMPLETE
+Status: Phase 02 Plan 04 complete; CreateListingForm + new listing page ready
+Last activity: 2026-05-18 -- Phase 02 Plan 04: CreateListingForm Client Component (magic bytes → Vercel Blob upload → POST → localStorage editToken); app/[token]/new Server Component shell
 
 Progress: [██████████] 100% (Phase 01)
 
@@ -69,6 +69,8 @@ Recent decisions affecting current work:
 - POST /[token]/api/listings: Zod validates 6 fields; nanoid() for ID; crypto.randomUUID() for editToken (server-generated, never accepted from client); returns { id, editToken } 201
 - Drizzle chain test mock pattern: vi.fn() defined inside vi.mock() factory; setupSelectChain() helper rebuilds chain per-test after vi.clearAllMocks()
 - ListingCard: Server Component, 'import type { Listing }' from schema; formatDate() local helper; no font-medium; no edit_token rendered
+- CreateListingForm: Client Component; three-step submit (isAllowedMagicBytes → upload() → POST); blob.url stored as photoKey (OQ-01 resolved); editToken to localStorage only; isPending guard prevents double-submit
+- app/[token]/new/page.tsx: Server Component shell; force-dynamic; async params; passes token to CreateListingForm
 
 ### Pending Todos
 
@@ -91,4 +93,4 @@ Items acknowledged and carried forward from previous milestone close:
 
 Last session: 2026-05-18
 Stopped at: Phase 02 Plan 03 complete — ListingCard Server Component done
-Resume file: .planning/phases/02-core-listing-lifecycle/02-03-SUMMARY.md
+Resume file: .planning/phases/02-core-listing-lifecycle/02-04-SUMMARY.md
