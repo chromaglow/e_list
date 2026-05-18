@@ -1,4 +1,5 @@
 {
+  "worktrees": false,
   "mode": "interactive",
   "granularity": "coarse",
   "parallelization": true,
@@ -9,7 +10,8 @@
     "plan_check": true,
     "verifier": true,
     "nyquist_validation": false,
-    "auto_advance": false
+    "auto_advance": false,
+    "_auto_chain_active": false
   },
   "ship": {
     "pr_body_sections": [

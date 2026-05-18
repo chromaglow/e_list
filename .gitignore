@@ -1,0 +1,75 @@
+# Dependencies
+node_modules
+
+# Next.js build output
+.next
+out
+
+# Env files (real secrets — never commit)
+.env.local
+.env*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+*.pem
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Test output
+/coverage
+
+# Home-directory personal files (project lives in ~/ on dev machine)
+.bash_history
+.bash_logout
+.bashrc
+.bashrc.original
+.zshrc
+.zprofile
+.zsh_history
+.profile
+.dmrc
+.face
+.face.icon
+.gitconfig
+.sudo_as_admin_successful
+.ICEauthority
+.Xauthority
+.xsession-errors
+.xsession-errors.old
+.claude.json
+surfshark-install.sh
+
+# Home-directory folders
+.cache/
+.config/
+.java/
+.local/
+.mozilla/
+.npm/
+.nvsdkm/
+.pki/
+.surfshark/
+.claude/
+bin/
+Desktop/
+Documents/
+Downloads/
+Music/
+Pictures/
+Public/
+Templates/
+Videos/
+
+# Claude / GSD internal
+.planning/agent-history.json
+.planning/current-agent-id.txt
