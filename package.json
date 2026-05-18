@@ -11,11 +11,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:smoke": "tsx scripts/db-smoke-test.ts"
+    "db:smoke": "tsx scripts/db-smoke-test.ts",
+    "upload:smoke": "tsx scripts/upload-smoke-test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@libsql/client": "0.17.3",
+    "@vercel/blob": "2.3.3",
     "bcryptjs": "3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
