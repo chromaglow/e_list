@@ -23,13 +23,13 @@
 
 ## Phase 02: Core Listing Lifecycle
 
-**Status:** IN PROGRESS (1/5 plans)
+**Status:** IN PROGRESS (2/5 plans)
 **Goal:** Create listing form, browse page with card grid, photo upload integration, edit token issuance
 
 | Plan | Name | Status | Summary |
 |------|------|--------|---------|
 | 02-01 | next/image CDN whitelist + fallback.jpg | DONE | remotePatterns + JPEG placeholder |
-| 02-02 | Create listing Route Handler | PENDING | POST /api/listings, Zod validation, DB insert, editToken |
+| 02-02 | Create listing Route Handler | DONE | POST /api/listings, Zod validate, Drizzle insert, { id, editToken } 201 |
 | 02-03 | ListingCard component | PENDING | Photo, title, price/FREE badge, contact, date |
 | 02-04 | Browse page with card list | PENDING | Drizzle query, EmptyState fallback, AppHeader link |
 | 02-05 | CreateListingForm + new page | PENDING | Client Component form, upload(), localStorage token |

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 01 complete — next.config.ts + fallback.jpg done
-last_updated: "2026-05-18T23:08:54Z"
-last_activity: 2026-05-18 -- Phase 02 Plan 01 complete; next/image CDN whitelist and fallback.jpg added
+stopped_at: Phase 02 Plan 02 complete — listing-service + POST /api/listings handler done
+last_updated: "2026-05-18T23:16:00Z"
+last_activity: 2026-05-18 -- Phase 02 Plan 02 complete; getActiveListings, createListing, POST route handler, 11 unit tests
 progress:
   total_phases: 3
   completed_phases: 1
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 02 (core-listing-lifecycle) — EXECUTING
-Plan: 1 of 5 — COMPLETE
-Status: Phase 02 Plan 01 complete; prereqs for ListingCard satisfied
-Last activity: 2026-05-18 -- Phase 02 Plan 01: next.config.ts remotePatterns + public/fallback.jpg added and verified
+Plan: 2 of 5 — COMPLETE
+Status: Phase 02 Plan 02 complete; listing-service.ts and POST /api/listings handler ready
+Last activity: 2026-05-18 -- Phase 02 Plan 02: getActiveListings, createListing, POST route handler with Zod validation; 11 unit tests; 112 total tests pass
 
 Progress: [██████████] 100% (Phase 01)
 
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - Ownership: One-time edit token issued at listing creation, stored in creator's localStorage — required to mark taken/sold
 - next/image CDN: remotePatterns whitelist uses *.blob.vercel-storage.com wildcard (covers all Vercel Blob store subdomains)
 - Fallback image: /public/fallback.jpg committed as placeholder JPEG; user replaces with dog photo before Phase 2 ships
+- listing-service.ts: server-only module; getActiveListings() queries status='active' ordered desc(created_at); createListing() thin insert wrapper
+- POST /[token]/api/listings: Zod validates 6 fields; nanoid() for ID; crypto.randomUUID() for editToken (server-generated, never accepted from client); returns { id, editToken } 201
+- Drizzle chain test mock pattern: vi.fn() defined inside vi.mock() factory; setupSelectChain() helper rebuilds chain per-test after vi.clearAllMocks()
 
 ### Pending Todos
 
@@ -86,5 +89,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-05-18
-Stopped at: Phase 02 Plan 01 complete — next.config.ts + fallback.jpg done
-Resume file: .planning/phases/02-core-listing-lifecycle/02-01-SUMMARY.md
+Stopped at: Phase 02 Plan 02 complete — listing-service.ts + POST /api/listings done
+Resume file: .planning/phases/02-core-listing-lifecycle/02-02-SUMMARY.md
