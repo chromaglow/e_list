@@ -36,17 +36,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Walking Skeleton: scaffold Next.js 16 + invite-token proxy.ts + styled empty shell with disabled CTA + complete seven-var env loader skeleton (ACCS-01, ACCS-02)
+- [x] 01-01-PLAN.md — Walking Skeleton: scaffold Next.js 16 + invite-token proxy.ts + styled empty shell with disabled CTA + complete seven-var env loader skeleton (ACCS-01, ACCS-02)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — Drizzle schema for listings table + Turso connection + generate/migrate workflow (D-07)
-- [ ] 01-03-PLAN.md — Admin auth primitives: bcryptjs + zod + scripts/gen-hash.js + ADMIN_PASSWORD_HASH + lib/session.ts createAdminSession/deleteAdminSession + lib/rate-limit.ts + lib/admin-validators.ts (ADMN-01 hash half; D-02)
+- [x] 01-02-PLAN.md — Drizzle schema for listings table + Turso connection + generate/migrate workflow (D-07)
+- [x] 01-03-PLAN.md — Admin auth primitives: bcryptjs + zod + scripts/gen-hash.js + ADMIN_PASSWORD_HASH + lib/session.ts createAdminSession/deleteAdminSession + lib/rate-limit.ts + lib/admin-validators.ts (ADMN-01 hash half; D-02)
 - [ ] 01-04-PLAN.md — Vercel Blob client-upload route at app/[token]/api/upload/route.ts with allowedContentTypes + 8 MB cap + client-side isAllowedMagicBytes helper (D-04, D-05, D-06)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03b-PLAN.md — Admin auth routes + UI: /api/admin/login (constant-time bcrypt + rate-limit) + /api/admin/logout + /{token}/admin/login form + /{token}/admin landing with DAL verify (ADMN-02; ADMN-01 login flow half; D-01)
+- [x] 01-03b-PLAN.md — Admin auth routes + UI: /api/admin/login (constant-time bcrypt + rate-limit) + /api/admin/logout + /{token}/admin/login form + /{token}/admin landing with DAL verify (ADMN-02; ADMN-01 login flow half; D-01)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -87,6 +87,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Security Gate | 0/6 | Planned | - |
+| 1. Foundation & Security Gate | 4/6 | In Progress | - |
 | 2. Core Listing Lifecycle | 0/? | Not started | - |
 | 3. Status Management & Admin Tools | 0/? | Not started | - |
