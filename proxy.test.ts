@@ -77,25 +77,25 @@ beforeEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('proxy.ts — invite gate', () => {
-  it('rewrites to /not-found when path is / (no token)', async () => {
+  it('rewrites to /_not-found when path is / (no token)', async () => {
     await proxy(makeRequest('/') as any)
     expect(mockRewrite).toHaveBeenCalled()
     const url = mockRewrite.mock.calls[0][0] as URL
-    expect(url.pathname).toBe('/not-found')
+    expect(url.pathname).toBe('/_not-found')
   })
 
-  it('rewrites to /not-found for wrong 64-char token (same length, wrong value)', async () => {
+  it('rewrites to /_not-found for wrong 64-char token (same length, wrong value)', async () => {
     await proxy(makeRequest(`/${WRONG_TOKEN}/`) as any)
     expect(mockRewrite).toHaveBeenCalled()
     const url = mockRewrite.mock.calls[0][0] as URL
-    expect(url.pathname).toBe('/not-found')
+    expect(url.pathname).toBe('/_not-found')
   })
 
-  it('rewrites to /not-found for short/wrong token', async () => {
+  it('rewrites to /_not-found for short/wrong token', async () => {
     await proxy(makeRequest('/wrong-short-token/') as any)
     expect(mockRewrite).toHaveBeenCalled()
     const url = mockRewrite.mock.calls[0][0] as URL
-    expect(url.pathname).toBe('/not-found')
+    expect(url.pathname).toBe('/_not-found')
   })
 
   it('calls NextResponse.next() for correct INVITE_TOKEN', async () => {
@@ -104,16 +104,16 @@ describe('proxy.ts — invite gate', () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
-  it('rewrites to /not-found for /api path without invite token in first segment', async () => {
+  it('rewrites to /_not-found for /api path without invite token in first segment', async () => {
     await proxy(makeRequest('/api/anything') as any)
     expect(mockRewrite).toHaveBeenCalled()
     const url = mockRewrite.mock.calls[0][0] as URL
-    expect(url.pathname).toBe('/not-found')
+    expect(url.pathname).toBe('/_not-found')
   })
 
   it('uses NextResponse.rewrite for 404 (not error) — T-01-02', async () => {
     await proxy(makeRequest('/bad-token/') as any)
-    // rewrite was called with /not-found URL
+    // rewrite was called with /_not-found URL
     expect(mockRewrite).toHaveBeenCalled()
     // mockNext was NOT called (request blocked)
     expect(mockNext).not.toHaveBeenCalled()

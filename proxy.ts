@@ -13,7 +13,7 @@ import { verifyAdminSession } from '@/lib/session'
  *
  * Security:
  *   T-01-01: timingSafeEqual for constant-time comparison
- *   T-01-02: NextResponse.rewrite('/not-found') — preserves URL, returns 404
+ *   T-01-02: NextResponse.rewrite('/_not-found') — preserves URL, returns 404
  *   T-01-04: verifyAdminSession uses algorithms:['HS256'] — no alg:none or confusion
  *   T-01-05: /admin/login path is reachable without admin JWT (segments[2] !== 'login' guard)
  */
@@ -40,9 +40,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!tokenMatch) {
-    // Rewrite to /not-found — renders app/not-found.tsx with 404 status,
-    // URL unchanged (T-01-02). Rewrite is the reliable approach for this runtime.
-    return NextResponse.rewrite(new URL('/not-found', request.url))
+    // Rewrite to /_not-found with explicit 404 status (T-01-02).
+    // URL stays unchanged in the browser; /_not-found renders app/not-found.tsx.
+    return NextResponse.rewrite(new URL('/_not-found', request.url), { status: 404 })
   }
 
   // ── Check 2: Admin session gate (admin paths only, excluding login) ──────

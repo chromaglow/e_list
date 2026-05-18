@@ -1,4 +1,4 @@
-// app/not-found.tsx — Rendered by proxy.ts via NextResponse.rewrite('/not-found')
+// app/not-found.tsx — Rendered by proxy.ts via NextResponse.rewrite('/_not-found')
 // when an invalid or missing invite token is detected.
 // Dependency-light: no shell component imports (route-agnostic, token-free).
 
