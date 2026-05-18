@@ -42,7 +42,7 @@ Plans:
 
 - [x] 01-02-PLAN.md — Drizzle schema for listings table + Turso connection + generate/migrate workflow (D-07)
 - [x] 01-03-PLAN.md — Admin auth primitives: bcryptjs + zod + scripts/gen-hash.js + ADMIN_PASSWORD_HASH + lib/session.ts createAdminSession/deleteAdminSession + lib/rate-limit.ts + lib/admin-validators.ts (ADMN-01 hash half; D-02)
-- [ ] 01-04-PLAN.md — Vercel Blob client-upload route at app/[token]/api/upload/route.ts with allowedContentTypes + 8 MB cap + client-side isAllowedMagicBytes helper (D-04, D-05, D-06)
+- [x] 01-04-PLAN.md — Vercel Blob client-upload route at app/[token]/api/upload/route.ts with allowedContentTypes + 8 MB cap + client-side isAllowedMagicBytes helper (D-04, D-05, D-06)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -87,6 +87,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Security Gate | 4/6 | In Progress | - |
+| 1. Foundation & Security Gate | 5/6 | In Progress | - |
 | 2. Core Listing Lifecycle | 0/? | Not started | - |
 | 3. Status Management & Admin Tools | 0/? | Not started | - |
