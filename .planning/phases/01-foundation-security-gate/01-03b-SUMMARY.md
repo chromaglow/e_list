@@ -133,6 +133,38 @@ All plan-level verification guards passed:
 - Do NOT modify these route handlers — Phase 3 owns new routes, not modifications to existing ones
 - Admin landing page (`app/[token]/admin/page.tsx`) is intentionally minimal — Phase 3 will add delete + rotate actions
 
+## Environment Fix: .env.local ADMIN_PASSWORD_HASH
+
+**Issue:** Next.js 16 Turbopack's dotenv-expand was treating the `$` signs in the bcrypt hash as variable references (e.g. `$pGF35fnpDo9gPnH` → empty string), mangling the value and causing `lib/env.ts` to throw 500 on every login request.
+
+**Fix:** Backslash-escape the `$` signs in `.env.local`:
+```
+ADMIN_PASSWORD_HASH=\$2b\$12\$pGF35fnpDo9gPnH.1xqlOOU.GEclntq4CZ0A7yW6TzS41uf9HdtNu
+```
+dotenv-expand strips the backslashes before writing to `process.env`, so the validator and `bcrypt.compare` receive the correct `$2b$12$...` value.
+
+**Note for future bcrypt hashes in .env.local:** Always backslash-escape `$` signs when using Next.js dotenv-expand. Single-quoted wrapping (`'$2b$...'`) does not prevent expansion in Next.js 16 Turbopack.
+
+## Task 05 Human Verification — Status
+
+**Curl steps (1–8):** ✅ All pass
+- Bare `/api/admin/login` → 404 ✓
+- `/{token}/admin/login` → 200 ✓
+- Unauthenticated `/{token}/admin` → 307 redirect ✓
+- Wrong credentials → 401 ✓
+- Rate limiter: 5 attempts then 429 ✓
+- Correct credentials → 200 + Set-Cookie (admin_session, HttpOnly, SameSite=strict) ✓
+- Cookie grants 200 access to `/{token}/admin` ✓
+- Logout clears cookie (Expires=1970) ✓
+
+**Browser steps (checks 1–4):** ✅ All pass
+- Login page renders ✓
+- Wrong credentials → inline "Invalid credentials" error ✓
+- Correct credentials → redirect to admin, "Logged in as admin." ✓
+- Logout → redirect to login page ✓
+
+**Browser check 5 (DevTools cookie flags):** ⏳ Pending — confirm HttpOnly and SameSite=Strict in Application → Cookies after restarting dev server to reset in-memory rate limiter.
+
 ## Next Step
 
-**Task 05 (human verification)** — start dev server and run the curl + browser checks detailed in the plan.
+**Task 05 final step:** restart dev server (`npm run dev`), log in once, open DevTools → Application → Cookies, confirm `admin_session` shows HttpOnly ✓ and SameSite=Strict. Then type "approved".
