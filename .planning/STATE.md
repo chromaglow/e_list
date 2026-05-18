@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 02 complete — listing-service + POST /api/listings handler done
-last_updated: "2026-05-18T23:16:00Z"
-last_activity: 2026-05-18 -- Phase 02 Plan 02 complete; getActiveListings, createListing, POST route handler, 11 unit tests
+stopped_at: Phase 02 Plan 03 complete — ListingCard Server Component done
+last_updated: "2026-05-18T23:20:00Z"
+last_activity: 2026-05-18 -- Phase 02 Plan 03 complete; ListingCard Server Component with photo, FREE badge, date, poster info
 progress:
   total_phases: 3
   completed_phases: 1
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 02 (core-listing-lifecycle) — EXECUTING
-Plan: 2 of 5 — COMPLETE
-Status: Phase 02 Plan 02 complete; listing-service.ts and POST /api/listings handler ready
-Last activity: 2026-05-18 -- Phase 02 Plan 02: getActiveListings, createListing, POST route handler with Zod validation; 11 unit tests; 112 total tests pass
+Plan: 3 of 5 — COMPLETE
+Status: Phase 02 Plan 03 complete; ListingCard Server Component ready
+Last activity: 2026-05-18 -- Phase 02 Plan 03: ListingCard Server Component with next/image, FREE badge, line-clamp-2 description, formatted date in time element
 
 Progress: [██████████] 100% (Phase 01)
 
@@ -68,6 +68,7 @@ Recent decisions affecting current work:
 - listing-service.ts: server-only module; getActiveListings() queries status='active' ordered desc(created_at); createListing() thin insert wrapper
 - POST /[token]/api/listings: Zod validates 6 fields; nanoid() for ID; crypto.randomUUID() for editToken (server-generated, never accepted from client); returns { id, editToken } 201
 - Drizzle chain test mock pattern: vi.fn() defined inside vi.mock() factory; setupSelectChain() helper rebuilds chain per-test after vi.clearAllMocks()
+- ListingCard: Server Component, 'import type { Listing }' from schema; formatDate() local helper; no font-medium; no edit_token rendered
 
 ### Pending Todos
 
@@ -89,5 +90,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-05-18
-Stopped at: Phase 02 Plan 02 complete — listing-service.ts + POST /api/listings done
-Resume file: .planning/phases/02-core-listing-lifecycle/02-02-SUMMARY.md
+Stopped at: Phase 02 Plan 03 complete — ListingCard Server Component done
+Resume file: .planning/phases/02-core-listing-lifecycle/02-03-SUMMARY.md
