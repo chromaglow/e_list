@@ -1,189 +1,110 @@
 # FriendSwap — Handoff Document
 
-**Created:** 2026-05-18  
-**Context:** Phase 01 execution paused — build tooling issue on low-RAM machine; resuming on a higher-RAM machine.
+**Updated:** 2026-05-18
+**Context:** Phase 01 Plans 01-01 through 01-03 complete and committed. Resuming at Plan 01-03b.
 
 ---
 
-## What Was Accomplished
+## What Was Accomplished This Session
 
-### Phase 01 — Plan 01-01: Complete (code only, build pending)
+### Plan 01-01 — Walking Skeleton (COMPLETE, committed)
+All code written and verified. Bug fixed: proxy rewrite changed from `/not-found` to `/_not-found` with `{ status: 404 }` — the original route matched `[token]` dynamic route and returned HTTP 200 with the browse shell instead of a real 404.
 
-All code for Plan 01-01 has been written and verified. **53/53 vitest tests pass.** All plan acceptance criteria are met. The only outstanding item is `npm run build` which hangs due to a Tailwind v4 PostCSS issue specific to this machine (see below).
+**Commit:** `97c16d1`
 
-**Files created by Plan 01-01:**
+### Plan 01-02 — Drizzle + Turso Schema (COMPLETE, committed)
+- `lib/schema.ts` — listings table, 13 columns, status enum CHECK constraint, soft-delete timestamps
+- `lib/db.ts` — server-only Drizzle client
+- `drizzle.config.ts` — turso dialect, loads `.env.local`
+- Migration applied to live Turso DB (`friendswap-chromaglow.aws-us-west-2.turso.io`)
+- Smoke test confirmed: 0 listings in table
 
-| File | Purpose |
-|------|---------|
-| `proxy.ts` | Invite-gate + admin JWT middleware (sequential checks, constant-time compare) |
-| `lib/env.ts` | Typed env loader for ALL 7 env vars — Wave 2 plans never modify this |
-| `lib/session.ts` | `verifyAdminSession()` jose JWT helper (HS256-locked) |
-| `lib/env.test.ts` | 31 vitest tests covering all 7 env var validators |
-| `lib/session.test.ts` | vitest tests for verifyAdminSession |
-| `proxy.test.ts` | 15+ vitest tests covering invite gate + admin JWT gate |
-| `app/layout.tsx` | Root layout with Geist font, viewport meta, FriendSwap metadata |
-| `app/globals.css` | Tailwind v4 CSS with shadcn theme variables |
-| `app/not-found.tsx` | Branded 404 page rendered by proxy on invalid token |
-| `app/[token]/layout.tsx` | Minimal pass-through token-scoped layout |
-| `app/[token]/page.tsx` | Empty browse shell (`force-dynamic`) |
-| `components/shell/AppHeader.tsx` | Sticky header with FriendSwap brand + disabled "Post an item" button |
-| `components/shell/EmptyState.tsx` | "Nothing here yet" empty state |
-| `components/ui/button.tsx` | shadcn Button primitive |
-| `scripts/gen-invite-token.js` | One-off 64-hex-char token generator |
-| `.env.local` | Real INVITE_TOKEN + SESSION_SECRET + placeholders (gitignored) |
-| `.env.example` | Full 7-var env contract with generation instructions |
-| `package.json` | All pinned deps per RESEARCH.md |
-| `tsconfig.json` | strict: true, @/* alias |
-| `vitest.config.ts` | Vitest configuration |
-| `components.json` | shadcn/ui configuration |
-| `postcss.config.mjs` | @tailwindcss/postcss config |
+**Deviation:** `server-only` removed from `lib/schema.ts` (drizzle-kit cannot import it); guard remains on `lib/db.ts`.
+
+**Commit:** `a89ab86`
+
+### Plan 01-03 — Admin Auth Primitives (COMPLETE, committed)
+- `scripts/gen-hash.js` — cost-12 bcrypt hash generator
+- `lib/session.ts` — extended with `createAdminSession` + `deleteAdminSession` (HS256 JWT, httpOnly/SameSite=Strict cookie, 4h expiry)
+- `lib/rate-limit.ts` — in-memory limiter, max=5/15min
+- `lib/admin-validators.ts` — zod `loginSchema`
+- 75/75 tests passing
+
+**Commit:** `77f6342`
 
 ---
 
-## The Build Issue (Must Fix on New Machine)
+## Current State
 
-### Root Cause
-
-The project lives at `/home/kettu888/` (the user's home directory), which is **also the git root**. Tailwind v4 auto-detects the project boundary by walking up to the nearest `.git` directory — so it considers the entire home directory as the "project" and tries to scan **~76,000 files** for Tailwind utility class names.
-
-Result: the PostCSS worker (`node postcss.js`) consumes **5–7 GB RAM** and **700%+ CPU** and never completes.
-
-### Fix — Before Running `npm run build`
-
-**Option A (recommended): Add `@source` restriction in globals.css**
-
-The file `app/globals.css` already has `@source` directives. Verify they exist and are correct:
-
-```css
-@source "../{app,components,lib,scripts}/**/*.{js,ts,jsx,tsx,mdx}";
-```
-
-If the build still hangs, also add this to `postcss.config.mjs`:
-
-```js
-const config = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-};
-export default config;
-```
-
-And check: does the new machine have the project in a dedicated directory (not directly in `~/`)? If so, the issue won't occur.
-
-**Option B (cleanest): Move project to a subdirectory**
-
-If the new machine clones into `~/projects/friendswap/` or any path where the git root is bounded to just the project files, Tailwind v4 auto-detection will work correctly and the build will complete normally.
-
-**Option C: Set `NODE_OPTIONS` memory limit**
-
-If the scan is genuinely necessary, give the PostCSS worker more memory:
-```bash
-NODE_OPTIONS='--max-old-space-size=16384' npm run build
-```
-
-### Verification After Build Fix
-
-Once `npm run build` exits 0, run these checks:
-
-```bash
-# Tests
-npm test  # must show 53 passed
-
-# Static guards
-test ! -f middleware.ts && echo "OK: no middleware.ts"
-grep -q 'timingSafeEqual' proxy.ts && echo "OK: T-01-01"
-grep -q "algorithms: \['HS256'\]" lib/session.ts && echo "OK: T-01-04"
-grep -q "NextResponse.rewrite(new URL('/not-found'" proxy.ts && echo "OK: T-01-02"
-
-# 7-var env contract
-for V in INVITE_TOKEN SESSION_SECRET TURSO_DATABASE_URL TURSO_AUTH_TOKEN ADMIN_USERNAME ADMIN_PASSWORD_HASH BLOB_READ_WRITE_TOKEN; do
-  grep -q "$V" lib/env.ts && echo "OK: $V" || echo "FAIL: $V"
-done
-```
-
-### Human Verification (Task 06 of Plan 01-01)
-
-Once the build passes, do this manual check:
-
-```bash
-npm run dev &
-TOKEN=$(grep '^INVITE_TOKEN=' .env.local | cut -d= -f2)
-
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/         # expect 404
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/$TOKEN/  # expect 200
-curl -s http://localhost:3000/$TOKEN/ | grep -c 'FriendSwap'            # expect >=1
-curl -s http://localhost:3000/$TOKEN/ | grep -c 'Nothing here yet'      # expect >=1
-```
-
-Open `http://localhost:3000/$TOKEN/` in mobile viewport — confirm: sticky header, "FriendSwap" text, "Post an item" button (disabled/greyed), "Nothing here yet" text.
+| Item | Value |
+|------|-------|
+| Branch | `main` |
+| Tests | 75/75 passing |
+| Dev server | Not running (was stopped) |
+| `.env.local` | Fully populated — all 7 vars set |
+| Admin password | `FriendSwap2026!` (hash in `.env.local`) |
+| Admin username | `admin` |
+| Turso DB | Live — `listings` table migrated, 0 rows |
 
 ---
 
-## How to Resume Execution
+## Next Step: Plan 01-03b
 
-```bash
-# 1. Clone and install
-git clone https://github.com/chromaglow/e_list.git friendswap
-cd friendswap
-npm install
+**File:** `.planning/phases/01-foundation-security-gate/01-03b-PLAN.md`
 
-# 2. Copy env (the .env.local is NOT committed — you'll need to recreate it)
-cp .env.example .env.local
-# Edit .env.local:
-#   INVITE_TOKEN: node scripts/gen-invite-token.js
-#   SESSION_SECRET: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-#   Leave TURSO_*, ADMIN_*, BLOB_* as placeholders for now
+**What it builds:**
+- `app/api/admin/login/route.ts` — POST handler: zod parse → bcrypt.compare → rate-limit → createAdminSession
+- `app/api/admin/logout/route.ts` — POST handler: deleteAdminSession → redirect
+- `app/[token]/admin/login/page.tsx` — Login form UI (server component + client form)
+- `app/[token]/admin/page.tsx` — Admin landing page (protected, requires valid session)
 
-# 3. Verify build works
-npm run build  # should exit 0 on a machine with the project in its own directory
+**Primitives already in place (from 01-03):**
+- `createAdminSession` / `deleteAdminSession` from `lib/session.ts`
+- `checkRateLimit` from `lib/rate-limit.ts`
+- `loginSchema` from `lib/admin-validators.ts`
+- `verifyAdminSession` already used by `proxy.ts`
 
-# 4. Complete Plan 01-01 human verification (Task 06), then commit
-git add -A
-git commit -m "feat(01-01): scaffold Next.js 16 foundation + invite gate"
-
-# 5. Resume Phase 01 execution at Plan 01-02
-# In Claude Code:
-/gsd:execute-phase 1 --interactive
-# (It will skip 01-01 once SUMMARY.md exists, or you can create it manually)
-```
+**Human verification needed after 01-03b:**
+- Navigate to `http://localhost:3000/<INVITE_TOKEN>/admin/login`
+- Login with `admin` / `FriendSwap2026!`
+- Confirm redirect to admin landing page
+- Confirm session persists on browser refresh
+- Confirm logout clears cookie and redirects to login
 
 ---
 
-## Phase 01 Remaining Plans
+## Environment
 
-| Plan | Wave | Status | What It Builds |
-|------|------|--------|----------------|
-| 01-01 | 1 | Code done, build pending | Next.js skeleton, invite gate, shell |
-| 01-02 | 2 | Not started | Drizzle + Turso schema + migrations |
-| 01-03 | 2 | Not started | Auth primitives (bcrypt, jose, rate-limit) |
-| 01-04 | 2 | Not started | Vercel Blob upload route |
-| 01-03b | 3 | Not started | Admin login/logout routes + UI |
-| 01-05 | 4 | Not started | Vercel deploy + cold-start verification |
-
-Wave 2 plans (01-02, 01-03, 01-04) each have user setup requirements:
-- **01-02**: Needs Turso account + real `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
-- **01-03**: Needs `ADMIN_USERNAME` + `ADMIN_PASSWORD_HASH` (run `node scripts/gen-hash.js <password>` — this script is created by Plan 01-03)
-- **01-04**: Needs Vercel project + Blob store + `BLOB_READ_WRITE_TOKEN`
+| Variable | Status |
+|----------|--------|
+| `INVITE_TOKEN` | `16b4c3a92917864568e2921359f8824bca37764fa2498000fa5da1728215d282` |
+| `SESSION_SECRET` | Set (base64, 32 bytes) |
+| `TURSO_DATABASE_URL` | `libsql://friendswap-chromaglow.aws-us-west-2.turso.io` |
+| `TURSO_AUTH_TOKEN` | Set (JWT) |
+| `ADMIN_USERNAME` | `admin` |
+| `ADMIN_PASSWORD_HASH` | Set (`$2b$12$...`) |
+| `BLOB_READ_WRITE_TOKEN` | Placeholder (needed in Plan 01-04) |
 
 ---
 
-## Security Notes
-
-- `INVITE_TOKEN` in `.env.local`: `996a8b5459064607336a2a6e22bc58e8a6d0f56e62f33a71d6e4796d5a0eaf96` (64 hex chars, real value, gitignored)
-- `SESSION_SECRET` in `.env.local`: real base64 value, gitignored
-- **The `.env.local` file is NOT pushed to GitHub.** On the new machine, generate fresh values with the scripts in the repo.
-
----
-
-## Key Architecture Decisions Already Locked
+## Key Architecture Decisions (locked)
 
 | Decision | Choice |
 |----------|--------|
-| Access gate | `proxy.ts` at repo root (NOT `middleware.ts`) with `timingSafeEqual` + `NextResponse.rewrite('/not-found')` |
-| JWT | HS256-only via jose, SESSION_SECRET required ≥32 bytes |
-| Env vars | All 7 declared in `lib/env.ts` — Wave 2 plans never modify this file |
-| Shell | Mobile-first, sticky header, force-dynamic, all Server Components |
-| Admin gate | `/admin/*` paths (except `/admin/login`) require valid `admin_session` JWT cookie |
+| Access gate | `proxy.ts` rewrite to `/_not-found` with `{ status: 404 }` |
+| JWT | HS256-only via jose, SESSION_SECRET ≥32 bytes |
+| Session cookie | httpOnly, SameSite=Strict, 4h, Secure in prod |
+| Rate limit | 5 attempts / 15 min, in-memory (accept cold-start trade-off) |
+| DB | Turso LibSQL + Drizzle ORM, generate+migrate only (no push) |
+| Schema | status enum `active/taken/deleted` + CHECK constraint + soft-delete timestamps |
 
-See `.planning/phases/01-foundation-security-gate/SKELETON.md` for the full locked decision table.
+---
+
+## How to Resume
+
+```bash
+cd "C:\Users\ezras\OneDrive\Documents\work\GitHub\e_list"
+npm install   # already done, but safe to re-run
+npm test      # should show 75/75
+# Then: /gsd:execute-phase 1  or just tell Claude to continue with Plan 01-03b
+```
