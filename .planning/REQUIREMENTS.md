@@ -24,7 +24,7 @@
 
 - [ ] **UX-01**: Listings with no price display a visual "FREE" badge instead of a price field
 - [ ] **UX-02**: The photo upload step shows a preview of the selected image before the form is submitted
-- [ ] **UX-03**: All pages are mobile-friendly — the app is usable on a phone with no horizontal scroll or pinch-zoom required
+- [x] **UX-03**: All pages are mobile-friendly — the app is usable on a phone with no horizontal scroll or pinch-zoom required
 
 ### Admin
 
@@ -86,7 +86,7 @@ Deferred — not in current roadmap.
 | LIST-05 | Phase 2 | Pending |
 | UX-01 | Phase 2 | Pending |
 | UX-02 | Phase 2 | Pending |
-| UX-03 | Phase 2 | Pending |
+| UX-03 | Phase 2 | Complete |
 | LIST-06 | Phase 3 | Pending |
 | LIST-07 | Phase 3 | Pending |
 | ADMN-03 | Phase 3 | Pending |

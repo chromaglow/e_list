@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 context gathered — ready for planning
-last_updated: "2026-05-18T00:00:00.000Z"
-last_activity: 2026-05-18 -- Phase 02 context gathered; 9 decisions captured across 4 gray areas
+stopped_at: Phase 02 Plan 01 complete — next.config.ts + fallback.jpg done
+last_updated: "2026-05-18T23:08:54Z"
+last_activity: 2026-05-18 -- Phase 02 Plan 01 complete; next/image CDN whitelist and fallback.jpg added
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Friends can instantly see what's available and who to contact — frictionless posting and browsing within a closed group.
-**Current focus:** Phase 01 — foundation-security-gate
+**Current focus:** Phase 02 — core-listing-lifecycle
 
 ## Current Position
 
-Phase: 01 (foundation-security-gate) — EXECUTING
-Plan: 6 of 6 — COMPLETE
-Status: Phase 01 complete; ready for Phase 02
-Last activity: 2026-05-18 -- Phase 01 all 6 plans verified; production URL live; custom domain (swap.recklesspeach.com) pending DNS setup
+Phase: 02 (core-listing-lifecycle) — EXECUTING
+Plan: 1 of 5 — COMPLETE
+Status: Phase 02 Plan 01 complete; prereqs for ListingCard satisfied
+Last activity: 2026-05-18 -- Phase 02 Plan 01: next.config.ts remotePatterns + public/fallback.jpg added and verified
 
 Progress: [██████████] 100% (Phase 01)
 
@@ -63,6 +63,8 @@ Recent decisions affecting current work:
 - Stack: Next.js 15 App Router + TypeScript + Tailwind v4 + Turso (LibSQL) + Drizzle ORM + Vercel Blob + jose JWT + bcryptjs
 - Security: 32-byte (64 hex char) cryptographically random invite token, validated in middleware on every request
 - Ownership: One-time edit token issued at listing creation, stored in creator's localStorage — required to mark taken/sold
+- next/image CDN: remotePatterns whitelist uses *.blob.vercel-storage.com wildcard (covers all Vercel Blob store subdomains)
+- Fallback image: /public/fallback.jpg committed as placeholder JPEG; user replaces with dog photo before Phase 2 ships
 
 ### Pending Todos
 
@@ -84,5 +86,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-05-18
-Stopped at: Phase 02 context gathered — 9 decisions captured
-Resume file: .planning/phases/02-core-listing-lifecycle/02-CONTEXT.md
+Stopped at: Phase 02 Plan 01 complete — next.config.ts + fallback.jpg done
+Resume file: .planning/phases/02-core-listing-lifecycle/02-01-SUMMARY.md
