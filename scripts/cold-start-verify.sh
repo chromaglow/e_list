@@ -18,13 +18,13 @@ check() {
 }
 
 check "root-no-token-404"      404 "/"
-check "wrong-token-404"        404 "/wrong-token/"
-check "right-token-200"        200 "/$TOKEN/"
+check "wrong-token-404"        404 "/wrong-token"
+check "right-token-200"        200 "/$TOKEN"
 check "admin-login-reachable"  200 "/$TOKEN/admin/login"
 check "admin-no-cookie-307"    307 "/$TOKEN/admin"
 check "static-favicon-200"     200 "/favicon.ico"
 
-BODY=$(curl -s "$URL/$TOKEN/")
+BODY=$(curl -s "$URL/$TOKEN")
 if echo "$BODY" | grep -q FriendSwap; then
   echo "ok    body-contains-FriendSwap"
 else
