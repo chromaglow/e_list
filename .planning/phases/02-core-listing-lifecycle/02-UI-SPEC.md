@@ -50,6 +50,8 @@ Detected from existing project code. Do not deviate.
 | 24px | 24 | `p-6` / `gap-6` | Card padding, form section gaps |
 | 48px | 48 | `py-12` | Empty state vertical padding (existing pattern) |
 
+**Exception:** `space-y-1.5` / `gap-1.5` (6px) — approved for label-to-input gap and inline separator dots; matches LoginForm established pattern.
+
 ### 1.2 Page Shell
 
 All pages inherit this shell (established in Phase 1):
@@ -129,8 +131,10 @@ No other font sizes. Do not introduce `text-xl`, `text-2xl`, or `text-base font-
 ### 2.2 Font Weights
 
 Exactly 2 weights:
-- **Regular:** `font-normal` (400) — body text, labels, descriptions, dates, contact info
+- **Regular:** `font-normal` (400) — body text, labels, placeholder text, muted text, descriptions, dates, contact info
 - **Semibold:** `font-semibold` (600) — headings, card titles, badge text, button text
+
+`font-medium` (500) is not declared and must not appear anywhere in Phase 2 components.
 
 ### 2.3 Line Heights
 
@@ -383,7 +387,7 @@ w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ri
 
 **Label class string:**
 ```
-text-sm font-medium
+text-sm font-normal
 ```
 
 **Field group wrapper:**
@@ -444,7 +448,7 @@ The native `<input type="file">` is visually styled using a wrapping label patte
 
 ```tsx
 <div className="space-y-1.5">
-  <label htmlFor="photo" className="text-sm font-medium">
+  <label htmlFor="photo" className="text-sm font-normal">
     Photo <span className="font-normal text-muted-foreground">(optional)</span>
   </label>
   <input
@@ -452,7 +456,7 @@ The native `<input type="file">` is visually styled using a wrapping label patte
     type="file"
     accept="image/jpeg,image/png,image/webp"
     capture="environment"
-    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs file:font-medium file:text-foreground cursor-pointer"
+    className="w-full rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs file:font-normal file:text-foreground cursor-pointer"
   />
   <p className="text-xs text-muted-foreground">JPEG, PNG, or WebP · max 8 MB</p>
 </div>
@@ -470,7 +474,7 @@ The native `<input type="file">` is visually styled using a wrapping label patte
 | Pending (isPending) | "Posting…" — 50% opacity, pointer-events-none | `disabled={isPending}` — `buttonVariants` applies `disabled:pointer-events-none disabled:opacity-50` automatically |
 | Success | Form resets at 3s — button returns to Idle | — |
 
-Do not change button color or add a spinner. Opacity reduction + text change is sufficient loading feedback for a mobile-first invite-only app.
+Do not change button color or add a spinner. Opacity reduction + text change is sufficient loading feedback for a mobile-first invite-only app. Form inputs remain interactive during submission — button `disabled={isPending}` is sufficient to prevent re-submit.
 
 ### 5.2 Form Field Error States
 
