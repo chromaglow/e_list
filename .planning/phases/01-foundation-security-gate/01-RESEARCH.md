@@ -63,7 +63,7 @@ Phase 1 establishes the entire security and data foundation before any listing f
 
 **Critical finding — Next.js version:** The current npm latest is **Next.js 16.2.6** (released 2026-05-13). Next.js 16 deprecates `middleware.ts` and introduces `proxy.ts` as its replacement. The function is deprecated but still works — it logs a warning. The recommended approach for new projects is to use `proxy.ts`. This research uses the Next.js 16 / `proxy.ts` terminology, but notes `middleware.ts` still functions during the deprecation window.
 
-**Critical finding — Vercel Blob upload size:** Vercel Serverless Functions have a **hard 4.5 MB request body limit** that cannot be bypassed via configuration. The CLAUDE.md requirement of "max 8 MB" uploads cannot be satisfied via server-side upload. The correct approach is **client-side upload** (`@vercel/blob/client`) where the browser uploads directly to Vercel Blob — the server only generates a short-lived token to authorize the upload. This bypasses the function body limit entirely. Magic byte validation and content type restriction are enforced in the `onBeforeGenerateToken` callback. Size enforcement is handled by Vercel Blob's `maximumSizeInBytes` option.
+**Critical finding — Vercel Blob upload size:** Vercel Serverless Functions have a **hard 4.5 MB request body limit** that cannot be bypassed via configuration. The CLAUDE.md requirement of "max 8 MB" uploads cannot be satisfied via server-side upload. The correct approach is **client-side upload** (`@vercel/blob/client`) where the browser uploads directly to Vercel Blob — the server only generates a short-lived token to authorize the upload. This bypasses the function body limit entirely. Magic byte validation is enforced **client-side** in the browser BEFORE calling `upload()` (the server never receives the file bytes in this pattern — the @vercel/blob/client SDK opens a direct browser-to-CDN channel using the short-lived token); Vercel Blob's `allowedContentTypes` and `maximumSizeInBytes` in `onBeforeGenerateToken` act as a second layer enforced server-side by Vercel's CDN.
 
 **Primary recommendation:** Use `proxy.ts` for the invite gate + admin session check (two sequential checks in one file), client-side Vercel Blob upload with server-side `handleUpload` token generation, jose JWT in an HttpOnly SameSite=Strict cookie, and Drizzle ORM with drizzle-kit generate+migrate workflow committed to git.
 
@@ -81,7 +81,7 @@ Phase 1 establishes the entire security and data foundation before any listing f
 | Vercel Blob upload (file transfer) | Browser / Client | CDN (Vercel Blob) | Direct browser-to-Blob transfer bypasses function body limit |
 | DB schema + migrations | Database / Storage | — | Drizzle ORM, runs at build time on Vercel |
 | Browse page (empty shell) | Frontend Server (SSR) | — | React Server Component renders empty state |
-| Magic byte / content type validation | API / Backend (onBeforeGenerateToken) | — | Server callback runs before client upload token is issued |
+| Magic byte / content type validation | Browser / Client (isAllowedMagicBytes before upload()) | Vercel CDN (allowedContentTypes as second layer) | The @vercel/blob/client architecture transfers file bytes browser-to-CDN directly; server never sees file content. Magic byte validation runs in the browser via FileReader/arrayBuffer on the first 12 bytes BEFORE `upload()` is called; Vercel's CDN-side `allowedContentTypes` and `maximumSizeInBytes` enforcement acts as a defense-in-depth second layer. Revised 2026-05-17 per checker WARNING 2 to reflect the architectural reality that server-only magic-byte validation is impossible with @vercel/blob/client. |
 
 ---
 
@@ -190,16 +190,16 @@ proxy.ts (Next.js 16) — runs on EVERY request
     v
 Next.js App Router (route handlers + server components)
     |
-    +-- GET  /[token]/                   → Browse page (Server Component, empty shell)
+    +-- GET  /[token]/                          → Browse page (Server Component, empty shell)
     |
-    +-- GET  /[token]/admin/login        → Login form (Server Component)
-    +-- POST /api/admin/login            → Route Handler: bcrypt.compare() → SignJWT → Set cookie
-    +-- POST /api/admin/logout           → Route Handler: Delete cookie
+    +-- GET  /[token]/admin/login               → Login form (Server Component)
+    +-- POST /[token]/api/admin/login           → Route Handler: bcrypt.compare() → SignJWT → Set cookie
+    +-- POST /[token]/api/admin/logout          → Route Handler: Delete cookie
     |
-    +-- POST /api/upload                 → Route Handler: handleUpload() token exchange
-    |         onBeforeGenerateToken:     → Validate invite token from request header/cookie
-    |                                    → Return { allowedContentTypes, maximumSizeInBytes }
-    |         onUploadCompleted:         → (Phase 2 will use this to record photo_key)
+    +-- POST /[token]/api/upload                → Route Handler: handleUpload() token exchange
+    |         onBeforeGenerateToken:            → Validate invite token from request header/cookie
+    |                                           → Return { allowedContentTypes, maximumSizeInBytes }
+    |         onUploadCompleted:                → (Phase 2 will use this to record photo_key)
     |
     +-- DB layer (lib/db.ts)
     |       drizzle(createClient({ url, authToken }))
@@ -214,6 +214,8 @@ Browser uploads file directly to Vercel Blob CDN
     pathname (storage key) stored in DB — NOT the full URL
 ```
 
+**Note on API route placement (revision 2026-05-17):** ALL API routes live UNDER the `[token]` dynamic segment so the proxy gates them. Placing a route at `app/api/...` would bypass the proxy (segments[0] === "api" never matches INVITE_TOKEN) and the proxy would 404 it.
+
 ### Recommended Project Structure
 
 ```
@@ -225,20 +227,20 @@ Browser uploads file directly to Vercel Blob CDN
 ├── app/
 │   ├── layout.tsx              # Root layout (html/body/Tailwind globals)
 │   ├── not-found.tsx           # Rendered when proxy rewrites to /not-found
-│   ├── [token]/
-│   │   ├── layout.tsx          # Token-scoped layout (passes token to children)
-│   │   ├── page.tsx            # Browse page — empty shell (D-09, D-10)
-│   │   └── admin/
-│   │       └── login/
-│   │           └── page.tsx    # Admin login form
-│   └── api/
+│   └── [token]/
+│       ├── layout.tsx          # Token-scoped layout (passes token to children)
+│       ├── page.tsx            # Browse page — empty shell (D-09, D-10)
 │       ├── admin/
-│       │   ├── login/
-│       │   │   └── route.ts    # POST: bcrypt + JWT cookie
-│       │   └── logout/
-│       │       └── route.ts    # POST: delete cookie
-│       └── upload/
-│           └── route.ts        # POST: handleUpload token exchange
+│       │   └── login/
+│       │       └── page.tsx    # Admin login form
+│       └── api/
+│           ├── admin/
+│           │   ├── login/
+│           │   │   └── route.ts   # POST: bcrypt + JWT cookie — UNDER [token] so proxy gates it
+│           │   └── logout/
+│           │       └── route.ts   # POST: delete cookie — UNDER [token] so proxy gates it
+│           └── upload/
+│               └── route.ts       # POST: handleUpload token exchange — UNDER [token] so proxy gates it
 ├── lib/
 │   ├── db.ts                   # Drizzle client (server-only)
 │   ├── schema.ts               # Drizzle table definitions
@@ -362,8 +364,11 @@ export async function deleteAdminSession() {
 
 ### Pattern 3: Admin Login Route Handler (ADMN-01)
 
+**Critical: constant-time auth.** Always run `bcrypt.compare` even on username mismatch — otherwise username enumeration via response timing becomes trivial (username miss returns in ~1ms; password miss returns in ~bcrypt-cost milliseconds). The fix is to always call `compare` with the env-stored hash regardless of username match, then AND the username + password results at the end.
+
 ```typescript
-// File: app/api/admin/login/route.ts
+// File: app/[token]/api/admin/login/route.ts
+// Note: lives UNDER [token] segment so Plan 01's proxy.ts gates this route
 import { compare } from 'bcryptjs'
 import { createAdminSession } from '@/lib/session'
 
@@ -392,11 +397,19 @@ export async function POST(request: Request) {
 
   const { username, password } = await request.json()
 
-  const validUser = username === process.env.ADMIN_USERNAME
-  const validPass = await compare(password, process.env.ADMIN_PASSWORD_HASH!)
+  // Constant-time auth (T-03-03 mitigation, revised 2026-05-17 per checker WARNING 3):
+  // ALWAYS call bcrypt.compare, even when the username does not match — otherwise
+  // a username miss returns in microseconds (no bcrypt call) and a password miss
+  // returns in ~bcrypt-cost milliseconds (with the compare call), letting an
+  // attacker enumerate valid usernames via response timing. By running compare
+  // unconditionally and AND-ing the username check with the password check at
+  // the very end, the success/failure timing is indistinguishable.
+  const expectedHash = process.env.ADMIN_PASSWORD_HASH!
+  const usernameMatch = username === process.env.ADMIN_USERNAME
+  const passwordMatch = await compare(password, expectedHash)
   // CLAUDE.md: bcrypt cost ≥ 12 — enforced when generating the hash
 
-  if (!validUser || !validPass) {
+  if (!usernameMatch || !passwordMatch) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   }
 
@@ -475,7 +488,8 @@ drizzle-kit migrate && next build
 
 ```typescript
 // Source: vercel.com/docs/vercel-blob/client-upload
-// File: app/api/upload/route.ts
+// File: app/[token]/api/upload/route.ts
+// Note: lives UNDER [token] segment so Plan 01's proxy.ts gates this route
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
 
@@ -491,8 +505,13 @@ export async function POST(request: Request) {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
-        // Content type is restricted here — magic byte validation is Vercel Blob's responsibility
-        // when allowedContentTypes is set (Vercel validates on their end at upload)
+        // Content type is restricted here — Vercel CDN enforces allowedContentTypes
+        // as a SECOND layer. The FIRST layer (and the one that satisfies CLAUDE.md's
+        // "validate by magic bytes (not Content-Type)" requirement) is client-side
+        // magic-byte validation in the browser BEFORE upload() is called. The
+        // @vercel/blob/client architecture transfers file bytes browser-to-CDN
+        // directly; the server NEVER sees file content, so server-side magic-byte
+        // validation is architecturally impossible.
         return {
           allowedContentTypes: ALLOWED_TYPES,
           maximumSizeInBytes: MAX_SIZE_BYTES,
@@ -515,7 +534,7 @@ export async function POST(request: Request) {
 }
 ```
 
-**Magic byte validation:** Vercel Blob enforces `allowedContentTypes` on its end during the client upload. The CLAUDE.md requirement to "validate by magic bytes (not Content-Type)" is partially addressed by Vercel Blob's server-side content type validation. For stricter magic byte checking (first bytes of file), this must happen client-side before calling `upload()`, or in `onBeforeGenerateToken` via a pre-check. [ASSUMED — that Vercel Blob's allowedContentTypes enforcement is implemented server-side and not solely relying on the client's Content-Type header; verify with Vercel docs if magic byte requirement is strict]
+**Magic byte validation (revision 2026-05-17 per checker WARNING 2):** The CLAUDE.md requirement to "validate by magic bytes (not Content-Type)" is satisfied by a TWO-LAYER architecture: (1) the browser reads `file.slice(0, 12).arrayBuffer()` and calls `isAllowedMagicBytes()` (helper in `lib/upload-validators.ts`) BEFORE invoking `upload()` — this is the primary, content-based check that defeats Content-Type spoofing for honest clients; (2) Vercel Blob's `allowedContentTypes` enforcement on the CDN side is the second layer. Server-side magic-byte enforcement is architecturally impossible with `@vercel/blob/client` because the server never sees the file bytes — the SDK opens a direct browser-to-CDN channel using the short-lived token. A malicious client could bypass the browser-side check, but Vercel's CDN-side enforcement (which inspects the actual uploaded bytes server-side, not just the client's declared Content-Type header) still applies. [VERIFIED: vercel.com/docs/vercel-blob/client-upload, A2 in Assumptions Log]
 
 **DB storage:** Store `blob.pathname` (e.g., `"listings/abc123-abc123.jpg"`) in the `photo_key` column. Derive the CDN URL at query time: `https://<store-id>.public.blob.vercel-storage.com/${photo_key}`.
 
@@ -545,6 +564,8 @@ export const db = drizzle({
 - **Returning `NextResponse.error()` for 404:** This fails in Vercel's runtime. Use `NextResponse.rewrite(new URL('/not-found', request.url))`.
 - **Server upload for images >4.5 MB:** Vercel's function body limit is a hard platform constraint. Use `@vercel/blob/client` upload instead.
 - **`drizzle-kit push` in production:** `push` bypasses migration files and cannot be rolled back. Use `drizzle-kit generate` + `drizzle-kit migrate` only (D-07).
+- **Skipping bcrypt.compare on username mismatch:** Creates username-enumeration timing oracle (T-03-03). Always call compare with the env hash; AND the username + password results at the end (see Pattern 3).
+- **Placing API routes at `app/api/...`:** Bypasses Plan 01's proxy.ts gate (segments[0] === "api" never matches INVITE_TOKEN). Mount ALL API routes under `app/[token]/api/...` so the proxy validates the invite token before the handler runs. (Revision 2026-05-17 per checker BLOCKER 1)
 
 ---
 
@@ -605,6 +626,16 @@ export const db = drizzle({
 **How to avoid:** Admin login is at `/{token}/admin/login` (D-01). The proxy check for admin session should explicitly skip the login page itself: check `segments[2] !== 'login'` before requiring admin JWT.
 
 **Warning signs:** Admin login page accessible without the invite token in the URL.
+
+### Pitfall 4b: Admin API Routes Bypass Proxy When Placed at app/api/admin/* (BLOCKER 1, revision 2026-05-17)
+
+**What goes wrong:** Developer places admin route handlers at `app/api/admin/login/route.ts` and `app/api/admin/logout/route.ts` (the conventional Next.js spot). The proxy from Plan 01 checks `segments[0] === INVITE_TOKEN`, but for these paths `segments[0]` is the literal string `"api"` — never the token. The proxy rewrites to `/not-found` and the routes return 404.
+
+**Why it happens:** Convention. App Router examples almost always show `app/api/...` for API routes. The fact that this project's proxy uses the first path segment as the token gate is non-obvious.
+
+**How to avoid:** Mount ALL API routes UNDER the `[token]` dynamic segment: `app/[token]/api/admin/login/route.ts`, `app/[token]/api/admin/logout/route.ts`, `app/[token]/api/upload/route.ts`. Client components reference them as `` `/${token}/api/admin/login` `` (template literal, token received as a prop from a Server Component that read `params.token` per Next.js 16 async params).
+
+**Warning signs:** Admin login form submits and gets a 404 response in DevTools Network panel; route handler logs show no incoming requests.
 
 ### Pitfall 5: onUploadCompleted Not Firing Locally
 
@@ -726,28 +757,33 @@ FriendSwap at 5-20 users with 50-100 listings will use a negligible fraction of 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
 | A1 | In-memory rate limiting for admin login is acceptable for a single-admin hobby Vercel deploy | Architecture Patterns (Pattern 3) | If Vercel cold starts instance per request, rate limit is ineffective; switch to Upstash Redis |
-| A2 | Vercel Blob's `allowedContentTypes` enforcement is performed server-side by Vercel (not trusting client Content-Type header), satisfying CLAUDE.md "validate by magic bytes" requirement | Architecture Patterns (Pattern 5) | If Vercel Blob only checks MIME from client header, magic byte validation must be added in onBeforeGenerateToken or client-side |
+| A2 | Vercel Blob's `allowedContentTypes` enforcement is performed server-side by Vercel (not trusting client Content-Type header), acting as the second layer below the browser-side `isAllowedMagicBytes()` check | Architecture Patterns (Pattern 5), Architectural Responsibility Map | If Vercel Blob only checks MIME from client header, the browser-side magic-byte check becomes the SOLE defense for malicious clients (still defeats Content-Type spoofing for honest clients) |
 | A3 | `proxy.ts` / `middleware.ts` deprecation is a rename-only change with no behavioral differences for this use case | Architecture Patterns (Pattern 1) | If Next.js 16's proxy.ts has behavioral differences from middleware.ts, auth logic may need adjustment |
 | A4 | Turso free tier limits (500M row reads/month, 5 GB storage) will not be reached during FriendSwap's lifetime | Environment Availability | If limits are exceeded, service degrades; upgrade to $4.99/month Developer plan |
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three open questions raised in initial research have been resolved by Phase 1 plans. Marked RESOLVED 2026-05-17 per checker BLOCKER 2 (research_resolution).
 
 1. **Magic byte validation for Vercel Blob client uploads**
    - What we know: `allowedContentTypes` in `onBeforeGenerateToken` restricts MIME types. CLAUDE.md requires magic byte validation (file content, not Content-Type header).
    - What's unclear: Whether Vercel Blob validates content by magic bytes on its end, or only trusts the MIME type declared by the browser.
    - Recommendation: Add client-side pre-check (read first 4 bytes via FileReader before calling `upload()`). This runs in the browser but provides defense-in-depth. If Vercel Blob does server-side magic byte validation, this is belt-and-suspenders.
+   - **RESOLVED:** Client-side enforcement via `isAllowedMagicBytes()` helper in `lib/upload-validators.ts` (reads first 12 bytes via `file.slice(0, 12).arrayBuffer()` in the browser before calling `@vercel/blob/client` `upload()`). The @vercel/blob/client architecture means the server NEVER sees file bytes — it only generates a short-lived token, then the browser uploads directly to the Vercel CDN. Server-side magic-byte validation is therefore architecturally impossible. CLAUDE.md's "validate by magic bytes (not Content-Type)" intent is met by browser-side enforcement plus Vercel CDN's `allowedContentTypes` as a second layer. See Plan 01-04 (lib/upload-validators.ts and the [token]-gated upload route).
 
 2. **Admin password hash generation**
    - What we know: ADMIN_PASSWORD_HASH env var needs a bcrypt hash with cost ≥ 12.
    - What's unclear: How/where the project owner generates this hash (no UI for it in Phase 1).
    - Recommendation: Include a one-time Node.js script in the repo (`scripts/gen-hash.js`) that the project owner runs locally to generate the hash.
+   - **RESOLVED:** `scripts/gen-hash.js` is created in Plan 01-03 Task 01 as a one-time CLI helper. It hardcodes cost=12 (refuses CLI flags that would lower it), reads the plaintext password from `argv[2]`, and prints the bcrypt hash to stdout. The project owner runs `node scripts/gen-hash.js '<password>'` and pastes the output into `.env.local` as `ADMIN_PASSWORD_HASH=<hash>`. The hash is validated at env-load time by Plan 01's `lib/env.ts` against the regex `^\$2[aby]?\$1[2-9]\$` (bcrypt format, cost ≥ 12). See Plan 01-03 Task 01 and Task 02.
 
 3. **Vercel deployment: build command with drizzle-kit migrate**
    - What we know: D-08 requires `drizzle-kit migrate` in the Vercel build command.
    - What's unclear: Whether `npx drizzle-kit migrate` in Vercel's build environment correctly connects to Turso using env vars set in the Vercel dashboard.
    - Recommendation: Verify during initial Vercel deploy by checking build logs for migration success message.
+   - **RESOLVED:** Plan 01-05 Task 01 writes `vercel.json` with `buildCommand: "npx drizzle-kit migrate && next build"`. Plan 01-02 Task 05 verifies the migration is idempotent (second run reports "no migrations to apply"), so the Vercel build command is safe to run on every deploy. Plan 01-05 Task 04 captures the build logs from the first production deploy and confirms `drizzle-kit migrate` ran (grep for `drizzle-kit migrate|drizzle.*migrate` in the build log). Plan 01-05 Task 06 step 6 triggers a second deploy and confirms migrate reports "no migrations to apply", proving D-08 idempotency in production.
 
 ---
 
@@ -757,10 +793,10 @@ FriendSwap at 5-20 users with 50-100 listings will use a negligible fraction of 
 
 | ASVS Category | Applies | Standard Control |
 |---------------|---------|-----------------|
-| V2 Authentication | yes | bcryptjs cost ≥ 12; username from env var; in-memory rate limit (5 attempts/15 min) |
+| V2 Authentication | yes | bcryptjs cost ≥ 12; username from env var; in-memory rate limit (5 attempts/15 min); constant-time bcrypt.compare (T-03-03) |
 | V3 Session Management | yes | jose JWT, HttpOnly, SameSite=Strict, Secure, 4h expiry |
-| V4 Access Control | yes | proxy.ts validates invite token on every request before route handlers |
-| V5 Input Validation | yes | zod validates login form fields; Vercel Blob enforces allowedContentTypes |
+| V4 Access Control | yes | proxy.ts validates invite token on every request before route handlers; ALL API routes mounted under [token] segment so proxy gates them |
+| V5 Input Validation | yes | zod validates login form fields; client-side magic-byte check before upload; Vercel CDN enforces allowedContentTypes |
 | V6 Cryptography | yes | jose HS256 for JWT; bcryptjs for password; crypto.randomBytes(32) for invite token |
 
 ### Known Threat Patterns for This Stack
@@ -769,12 +805,14 @@ FriendSwap at 5-20 users with 50-100 listings will use a negligible fraction of 
 |---------|--------|---------------------|
 | Invite URL leakage | Information Disclosure | 32-byte token (CLAUDE.md); validate on every request in proxy |
 | Admin brute force | Elevation of Privilege | bcrypt cost 12; in-memory rate limit 5/15min (Phase 1); upgrade to Upstash if needed |
+| Username enumeration via timing | Spoofing | bcrypt.compare ALWAYS runs (even on username mismatch) so success/failure timing is constant (T-03-03; Pattern 3) |
 | Session cookie theft | Spoofing | HttpOnly prevents JS access; Secure prevents HTTP transmission; SameSite=Strict prevents CSRF |
-| File type bypass (malicious upload) | Tampering | allowedContentTypes in onBeforeGenerateToken; client-side magic byte pre-check |
+| File type bypass (malicious upload) | Tampering | Client-side magic-byte check in browser (isAllowedMagicBytes) + Vercel CDN allowedContentTypes |
 | Storage exhaustion | Denial of Service | maximumSizeInBytes: 8MB; 1 file per request enforced by handleUpload |
 | Same-origin image XSS | Tampering | Vercel Blob serves from `.blob.vercel-storage.com` (separate origin, automatic) |
 | Token in server logs | Information Disclosure | Mask token in log entries; proxy can inject sanitized header |
 | JWT algorithm confusion | Spoofing | Specify `algorithms: ['HS256']` in jwtVerify options |
+| API route bypassing proxy | Elevation of Privilege | Mount ALL API routes under app/[token]/api/... — NEVER at app/api/... |
 
 ---
 
@@ -785,11 +823,11 @@ All directives extracted from CLAUDE.md that constrain planning and implementati
 | Directive | Impact |
 |-----------|--------|
 | Invite token must be 32 bytes cryptographically random (64 hex chars) — never a short slug | Token generation: `crypto.randomBytes(32).toString('hex')` |
-| Validate invite token on every server request in middleware before any route handler runs | proxy.ts matcher must cover ALL routes including /api/* |
+| Validate invite token on every server request in middleware before any route handler runs | proxy.ts matcher must cover ALL routes including /api/*; ALL API routes mounted under [token] segment |
 | Admin bcrypt cost ≥ 12 | `bcryptjs.hash(pwd, 12)` — no lower cost allowed |
 | Rate limiting on login route | In-memory rate limiter in Route Handler (Phase 1); consider Upstash for production hardening |
 | Session cookie: HttpOnly, SameSite=Strict, Secure | Cookie options: `{ httpOnly: true, sameSite: 'strict', secure: true }` |
-| Image uploads: validate by magic bytes (not Content-Type), max 8 MB, 1 file | allowedContentTypes + maximumSizeInBytes in handleUpload; client-side magic byte pre-check |
+| Image uploads: validate by magic bytes (not Content-Type), max 8 MB, 1 file | Client-side `isAllowedMagicBytes()` check before upload() + Vercel CDN `allowedContentTypes` + `maximumSizeInBytes: 8 MB` in `handleUpload` (server-side magic-byte validation is architecturally impossible with @vercel/blob/client; client-side check satisfies CLAUDE.md intent) |
 | Never serve uploaded files from the same origin as the app | Vercel Blob handles this automatically (separate domain) |
 | Store image storage keys in DB, not full URLs | Store `blob.pathname` not `blob.url` in photo_key column |
 | Use status enum `'active' | 'taken' | 'deleted'` — not a boolean | Drizzle schema: `text({ enum: ['active','taken','deleted'] })` |
@@ -837,3 +875,7 @@ All directives extracted from CLAUDE.md that constrain planning and implementati
 
 **Research date:** 2026-05-17
 **Valid until:** 2026-06-17 (Next.js and Vercel Blob release frequently; re-verify if more than 30 days pass)
+
+**Revision history:**
+- 2026-05-17 — Initial research
+- 2026-05-17 — Revision per checker iteration 2: marked Open Questions section as RESOLVED with inline resolutions (BLOCKER 2); updated Architectural Responsibility Map magic-byte row to reflect client-side enforcement with CDN second layer (WARNING 2); updated Pattern 3 admin login example to show constant-time bcrypt.compare (WARNING 3); added Pitfall 4b for admin-route placement under [token] segment (cross-reference for BLOCKER 1 fixed in 01-03b-PLAN.md and SKELETON.md); reflected the same routing fix in the System Architecture Diagram and Recommended Project Structure
