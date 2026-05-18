@@ -19,7 +19,7 @@ export default async function AdminPage({
 
   return (
     <>
-      <AppHeader />
+      <AppHeader token={token} />
       <main className="mx-auto max-w-screen-sm px-4 py-12">
         <h2 className="mb-4 text-lg font-semibold">Admin</h2>
         <p className="mb-6 text-sm text-muted-foreground">Logged in as admin.</p>

@@ -11,7 +11,7 @@ export default async function AdminLoginPage({
   const { token } = await params
   return (
     <>
-      <AppHeader />
+      <AppHeader token={token} />
       <main className="min-h-[calc(100dvh-3.5rem)]">
         <LoginForm token={token} />
       </main>

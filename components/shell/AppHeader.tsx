@@ -1,23 +1,18 @@
 // components/shell/AppHeader.tsx — Sticky mobile-first header.
 // Server Component (rendered server-side only).
-// D-10: "Post an item" button is present as a disabled placeholder.
-// Phase 2 wires up the button action.
+// Phase 2: "Post an item" Link wired to /[token]/new using buttonVariants().
 
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { buttonVariants } from '@/components/ui/button'
 
-export default function AppHeader() {
+export default function AppHeader({ token }: { token: string }) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold tracking-tight">FriendSwap</h1>
-        <Button
-          disabled={true}
-          aria-label="Post an item (coming in Phase 2)"
-          title="Coming soon"
-          className="cursor-not-allowed"
-        >
+        <Link href={`/${token}/new`} className={buttonVariants()}>
           Post an item
-        </Button>
+        </Link>
       </div>
     </header>
   )

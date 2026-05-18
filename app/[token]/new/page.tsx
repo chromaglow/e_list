@@ -11,7 +11,7 @@ export default async function NewListingPage({
   const { token } = await params
   return (
     <>
-      <AppHeader />
+      <AppHeader token={token} />
       <main className="min-h-[calc(100dvh-3.5rem)]">
         <CreateListingForm token={token} />
       </main>
