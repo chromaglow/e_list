@@ -1,11 +1,15 @@
 // lib/session.test.ts — vitest tests for lib/session.ts
-// Tests verifyAdminSession helper behaviors.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SignJWT } from 'jose'
 
-// Mock server-only
 vi.mock('server-only', () => ({}))
+
+const mockCookieSet = vi.fn()
+const mockCookieDelete = vi.fn()
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(() => Promise.resolve({ set: mockCookieSet, delete: mockCookieDelete })),
+}))
 
 const validToken = 'a'.repeat(64)
 const validSecret = Buffer.from('a'.repeat(32)).toString('base64')
@@ -96,13 +100,49 @@ describe('lib/session.ts — verifyAdminSession', () => {
     expect(await verifyAdminSession(algNoneToken)).toBeNull()
   })
 
-  it('does not export createAdminSession', async () => {
-    const session = await import('./session')
-    expect((session as Record<string, unknown>).createAdminSession).toBeUndefined()
+})
+
+describe('lib/session.ts — createAdminSession', () => {
+  beforeEach(() => { mockCookieSet.mockClear(); mockCookieDelete.mockClear() })
+
+  it('sets admin_session cookie with httpOnly + strict + path=/', async () => {
+    const { createAdminSession } = await import('./session')
+    await createAdminSession()
+    expect(mockCookieSet).toHaveBeenCalledOnce()
+    const [name, , opts] = mockCookieSet.mock.calls[0]
+    expect(name).toBe('admin_session')
+    expect(opts.httpOnly).toBe(true)
+    expect(opts.sameSite).toBe('strict')
+    expect(opts.path).toBe('/')
+    expect(opts.expires).toBeInstanceOf(Date)
   })
 
-  it('does not export deleteAdminSession', async () => {
-    const session = await import('./session')
-    expect((session as Record<string, unknown>).deleteAdminSession).toBeUndefined()
+  it('JWT payload contains role: admin', async () => {
+    const { createAdminSession } = await import('./session')
+    const validSecret = Buffer.from('a'.repeat(32)).toString('base64')
+    const key = new TextEncoder().encode(validSecret)
+    await createAdminSession()
+    const [, token] = mockCookieSet.mock.calls[0]
+    const jose = await import('jose')
+    const { payload } = await jose.jwtVerify(token, key, { algorithms: ['HS256'] })
+    expect(payload.role).toBe('admin')
+  })
+
+  it('round-trips through verifyAdminSession', async () => {
+    const { createAdminSession, verifyAdminSession } = await import('./session')
+    await createAdminSession()
+    const [, token] = mockCookieSet.mock.calls[0]
+    const result = await verifyAdminSession(token)
+    expect(result?.role).toBe('admin')
+  })
+})
+
+describe('lib/session.ts — deleteAdminSession', () => {
+  beforeEach(() => { mockCookieDelete.mockClear() })
+
+  it('deletes the admin_session cookie', async () => {
+    const { deleteAdminSession } = await import('./session')
+    await deleteAdminSession()
+    expect(mockCookieDelete).toHaveBeenCalledWith('admin_session')
   })
 })

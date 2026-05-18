@@ -1,5 +1,6 @@
 import 'server-only'
-import { jwtVerify } from 'jose'
+import { jwtVerify, SignJWT } from 'jose'
+import { cookies } from 'next/headers'
 import { env } from '@/lib/env'
 
 // lib/session.ts — jose JWT verification helper.
@@ -17,6 +18,28 @@ const encodedKey = new TextEncoder().encode(env.SESSION_SECRET)
  *
  * @param token - The raw JWT string from the `admin_session` cookie
  */
+export async function createAdminSession(): Promise<void> {
+  const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000)
+  const token = await new SignJWT({ role: 'admin' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('4h')
+    .sign(encodedKey)
+  const cookieStore = await cookies()
+  cookieStore.set('admin_session', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    expires: expiresAt,
+    path: '/',
+  })
+}
+
+export async function deleteAdminSession(): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.delete('admin_session')
+}
+
 export async function verifyAdminSession(
   token: string | undefined | null
 ): Promise<{ role: string } | null> {
