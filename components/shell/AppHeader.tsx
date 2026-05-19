@@ -9,7 +9,7 @@ export default function AppHeader({ token }: { token: string }) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">FriendSwap</h1>
+        <Link href={`/${token}`} className="text-lg font-semibold tracking-tight">FriendSwap</Link>
         <Link href={`/${token}/new`} className={buttonVariants()}>
           Post an item
         </Link>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { upload } from '@vercel/blob/client'
 import { isAllowedMagicBytes } from '@/lib/upload-validators'
 import { Button } from '@/components/ui/button'
 import { CheckCircle } from 'lucide-react'
@@ -36,6 +35,16 @@ export default function CreateListingForm({ token }: { token: string }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (isPending) return
+
+    // Read form data synchronously before any await — React nullifies
+    // e.currentTarget after the first async yield.
+    const formData = new FormData(e.currentTarget)
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const price = formData.get('price') as string
+    const posterName = formData.get('posterName') as string
+    const contactInfo = formData.get('contactInfo') as string
+
     setIsPending(true)
     setError(null)
 
@@ -49,29 +58,34 @@ export default function CreateListingForm({ token }: { token: string }) {
         }
       }
 
-      // Step 2: Upload to Vercel Blob CDN
+      // Step 2: Upload via server route (server calls Vercel Blob directly)
       let photoUrl: string | undefined
       if (fileRef.current) {
         try {
-          const blob = await upload(fileRef.current.name, fileRef.current, {
-            access: 'public',
-            handleUploadUrl: `/${token}/api/upload`,
+          const uploadRes = await fetch(`/${token}/api/upload`, {
+            method: 'POST',
+            body: fileRef.current,
+            headers: {
+              'x-upload-content-type': fileRef.current.type,
+              'x-upload-filename': fileRef.current.name,
+              'x-upload-size': String(fileRef.current.size),
+            },
           })
-          photoUrl = blob.url
+          if (!uploadRes.ok) {
+            const body = await uploadRes.json().catch(() => ({}))
+            console.error('[upload] server error:', uploadRes.status, body)
+            setError('Upload failed — please try again.')
+            return
+          }
+          const { url } = await uploadRes.json()
+          photoUrl = url
         } catch {
           setError('Upload failed — please try again.')
           return
         }
       }
 
-      // Step 3: Read form data and POST to listings route handler
-      const formData = new FormData(e.currentTarget)
-      const title = formData.get('title') as string
-      const description = formData.get('description') as string
-      const price = formData.get('price') as string
-      const posterName = formData.get('posterName') as string
-      const contactInfo = formData.get('contactInfo') as string
-
+      // Step 3: POST to listings route handler
       const res = await fetch(`/${token}/api/listings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,9 +111,12 @@ export default function CreateListingForm({ token }: { token: string }) {
 
       // Step 4: Store edit token and show success
       const { id, editToken } = await res.json()
-      localStorage.setItem(`edit_token_${id}`, editToken)
-
       setSuccess(true)
+      try {
+        localStorage.setItem(`edit_token_${id}`, editToken)
+      } catch {
+        // localStorage unavailable (private mode, quota) — non-fatal
+      }
       setTimeout(() => {
         setSuccess(false)
         fileRef.current = null
@@ -107,6 +124,8 @@ export default function CreateListingForm({ token }: { token: string }) {
         setPreviewUrl(null)
         formRef.current?.reset()
       }, 3000)
+    } catch {
+      setError('Something went wrong. Please try again.')
     } finally {
       setIsPending(false)
     }
