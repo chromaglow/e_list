@@ -1,7 +1,7 @@
 # FriendSwap — Roadmap
 
 **Milestone:** v1.0 — Full listing lifecycle for a small trusted group
-**Last updated:** 2026-05-18 (Plan 04 complete)
+**Last updated:** 2026-05-18 (Phase 03 planned)
 
 ---
 
@@ -38,15 +38,26 @@
 
 ## Phase 03: Mark Taken + Admin Delete
 
-**Status:** NOT STARTED
+**Status:** PLANNED (5 plans)
 **Goal:** Mark listing as taken/sold (edit token verification), admin delete any listing, invite token regeneration
 
-| Plan | Name | Status | Summary |
-|------|------|--------|---------|
-| 03-01 | Mark taken/sold Route Handler | PENDING | Edit token verification, status update |
-| 03-02 | Mark taken UI (listing card button) | PENDING | Client Component with localStorage token check |
-| 03-03 | Admin delete listing | PENDING | Admin-gated soft delete, admin panel UI |
-| 03-04 | Invite token regeneration | PENDING | Admin panel, generate new token, invalidate old |
+**Plans:** 5 plans in 3 waves
+
+**Wave 1** *(foundations — run in parallel)*
+- [ ] 03-01-PLAN.md — Schema extensions + service functions (settings table, getListingsByFilter, markListingTaken, deleteListingAdmin, settings-service)
+- [ ] 03-02-PLAN.md — Client Component islands (MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-03-PLAN.md — Route handlers (PATCH/DELETE /listings/[id], POST /admin/api/regen-invite)
+- [ ] 03-04-PLAN.md — Middleware DB cache + schema push [BLOCKING] *(has human checkpoint)*
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 03-05-PLAN.md — UI wiring (ListingCard, BrowsePage, AdminPage) *(has smoke-test checkpoint)*
+
+**Cross-cutting constraints:**
+- `verifyAdminSession(cookies)` must be called in every admin-gated handler and server component (03-03, 03-04, 03-05)
+- `timingSafeEqual` from `node:crypto` required for all token comparisons (03-03, 03-04)
+- All client islands use `router.refresh()` after successful mutations to sync Server Component state
 
 ---
 
@@ -56,7 +67,7 @@
 |-------|-------------|--------|
 | Phase 01 | ACCS-01, ACCS-02, ADMN-01, ADMN-02 | COMPLETE |
 | Phase 02 | LIST-01, LIST-02, LIST-03, LIST-04, LIST-05, UX-01, UX-02, UX-03 | IN PROGRESS |
-| Phase 03 | LIST-06, LIST-07, ADMN-03, ADMN-04 | PENDING |
+| Phase 03 | LIST-06, LIST-07, ADMN-03, ADMN-04 | PLANNED |
 
 ---
 *Roadmap initialized: 2026-05-18*

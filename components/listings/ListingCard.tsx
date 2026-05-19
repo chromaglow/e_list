@@ -13,14 +13,20 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     <article className="rounded-lg border bg-card shadow-sm overflow-hidden">
       {/* Photo */}
       <div className="relative aspect-[4/3] w-full bg-muted">
-        <Image
-          src={listing.photo_key ?? '/fallback.jpg'}
-          alt={listing.title}
-          fill
-          className="object-cover"
-          loading="lazy"
-          sizes="(max-width: 640px) 100vw, 640px"
-        />
+        {listing.photo_key ? (
+          <Image
+            src={listing.photo_key}
+            alt={listing.title}
+            fill
+            className="object-cover"
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, 640px"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <span className="text-2xl font-semibold text-muted-foreground">No image</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
