@@ -36,22 +36,30 @@ async function getInviteToken(): Promise<string> {
     return tokenCache.value
   }
 
-  // Dynamic imports avoid importing server-only modules at middleware module parse time
-  // and are valid in Node.js runtime middleware.
-  const { db } = await import('@/lib/db')
-  const { settings } = await import('@/lib/schema')
-  const { eq } = await import('drizzle-orm')
+  try {
+    const { db } = await import('@/lib/db')
+    const { settings } = await import('@/lib/schema')
+    const { eq } = await import('drizzle-orm')
 
-  const row = await db
-    .select({ value: settings.value })
-    .from(settings)
-    .where(eq(settings.key, 'invite_token'))
-    .get()
+    const dbQuery = db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(eq(settings.key, 'invite_token'))
+      .get()
 
-  // Fallback: if no DB row exists yet, use the env var (Pitfall 6 guard — T-03-15)
-  const value = row?.value ?? env.INVITE_TOKEN
-  tokenCache = { value, expiresAt: Date.now() + CACHE_TTL_MS }
-  return value
+    // 3s timeout — if Turso is slow/unavailable, fall back to env var rather than hanging
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('DB timeout')), 3000)
+    )
+
+    const row = await Promise.race([dbQuery, timeoutPromise])
+    const value = row?.value ?? env.INVITE_TOKEN
+    tokenCache = { value, expiresAt: Date.now() + CACHE_TTL_MS }
+    return value
+  } catch {
+    // DB unavailable or timed out — fall back to env var (T-03-15)
+    return env.INVITE_TOKEN
+  }
 }
 
 export async function proxy(request: NextRequest) {
@@ -99,8 +107,6 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Named alias so middleware.ts can re-export using the Next.js-required name
-export { proxy as middleware }
 
 /**
  * Matcher: apply proxy to ALL requests EXCEPT static assets.
@@ -108,5 +114,5 @@ export { proxy as middleware }
  * app/[token]/api/... so segments[0] will be the token (D-03).
  */
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg|.*\\.webp|.*\\.ico).*)'],
 }

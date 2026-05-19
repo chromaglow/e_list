@@ -38,8 +38,8 @@ export default async function BrowsePage({
           <EmptyState />
         ) : (
           <div className="mx-auto max-w-screen-sm px-4 py-4 space-y-4">
-            {activeListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} token={token} isAdmin={isAdmin} />
+            {activeListings.map((listing, i) => (
+              <ListingCard key={listing.id} listing={listing} token={token} isAdmin={isAdmin} priority={i === 0} />
             ))}
           </div>
         )}

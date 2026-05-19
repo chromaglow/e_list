@@ -14,8 +14,9 @@ interface Props {
   listing: Listing
   token: string
   isAdmin: boolean
+  priority?: boolean
 }
-export default function ListingCard({ listing, token, isAdmin }: Props) {
+export default function ListingCard({ listing, token, isAdmin, priority = false }: Props) {
   return (
     <article className="rounded-lg border bg-card shadow-sm overflow-hidden">
       {/* Photo */}
@@ -26,13 +27,18 @@ export default function ListingCard({ listing, token, isAdmin }: Props) {
             alt={listing.title}
             fill
             className="object-cover"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
             sizes="(max-width: 640px) 100vw, 640px"
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <span className="text-2xl font-semibold text-muted-foreground">No image</span>
-          </div>
+          <Image
+            src="/fallback.png"
+            alt="No image"
+            fill
+            className="object-contain p-6"
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, 640px"
+          />
         )}
       </div>
 
