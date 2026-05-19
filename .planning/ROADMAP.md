@@ -49,7 +49,7 @@
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 03-03-PLAN.md — Route handlers (PATCH/DELETE /listings/[id], POST /admin/api/regen-invite)
-- [ ] 03-04-PLAN.md — Middleware DB cache + schema push [BLOCKING] *(has human checkpoint)*
+- [x] 03-04-PLAN.md — Middleware DB cache + schema push [BLOCKING] *(has human checkpoint)*
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 03-05-PLAN.md — UI wiring (ListingCard, BrowsePage, AdminPage) *(has smoke-test checkpoint)*

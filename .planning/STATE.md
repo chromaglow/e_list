@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 ## Current Position
 
-Phase: 03 (mark-taken-admin-delete) — IN PROGRESS (3/5 plans complete)
-Status: Executing Phase 03 — 03-01, 03-02, and 03-03 complete, 03-04 and 03-05 pending
-Last activity: 2026-05-19 -- 03-03 complete: PATCH/DELETE /[token]/api/listings/[id] and POST /[token]/admin/api/regen-invite route handlers
+Phase: 03 (mark-taken-admin-delete) — IN PROGRESS (4/5 plans complete)
+Status: Executing Phase 03 Wave 3 — 03-01 through 03-04 complete, 03-05 pending
+Last activity: 2026-05-19 -- 03-04 complete: proxy.ts DB token cache + middleware.ts entry point + settings table pushed + invite_token row seeded
 
 Progress: [██████████] 100% (Phase 01)
 
