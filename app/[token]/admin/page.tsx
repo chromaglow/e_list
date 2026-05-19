@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import AppHeader from '@/components/shell/AppHeader'
 import { verifyAdminSession } from '@/lib/session'
 import LogoutButton from '@/components/admin/LogoutButton'
+import RegenInviteForm from '@/components/admin/RegenInviteForm'
 
 // T-03-08: re-verify at DAL even though proxy.ts already gated (defense in depth)
 export const dynamic = 'force-dynamic'
@@ -24,6 +25,9 @@ export default async function AdminPage({
         <h2 className="mb-4 text-lg font-semibold">Admin</h2>
         <p className="mb-6 text-sm text-muted-foreground">Logged in as admin.</p>
         <LogoutButton token={token} />
+        <div className="mt-8">
+          <RegenInviteForm token={token} />
+        </div>
       </main>
     </>
   )
