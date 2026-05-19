@@ -48,7 +48,7 @@
 - [x] 03-02-PLAN.md — Client Component islands (MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-03-PLAN.md — Route handlers (PATCH/DELETE /listings/[id], POST /admin/api/regen-invite)
+- [x] 03-03-PLAN.md — Route handlers (PATCH/DELETE /listings/[id], POST /admin/api/regen-invite)
 - [ ] 03-04-PLAN.md — Middleware DB cache + schema push [BLOCKING] *(has human checkpoint)*
 
 **Wave 3** *(blocked on Wave 2 completion)*
