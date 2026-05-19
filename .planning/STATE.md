@@ -20,13 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Friends can instantly see what's available and who to contact — frictionless posting and browsing within a closed group.
-**Current focus:** Phase 02 — core-listing-lifecycle
+**Current focus:** v1.0 SHIPPED
 
 ## Current Position
 
 Phase: 03 (mark-taken-admin-delete) — COMPLETE (5/5 plans complete)
 Status: All phases complete — v1.0 implementation done
-Last activity: 2026-05-19 -- Phase 03 complete: all 5 plans done, all requirements LIST-06/07 ADMN-03/04 met
+Last activity: 2026-05-19 -- v1.0 shipped: all phases complete, smoke tested, deployed to Vercel
 
 Progress: [██████████] 100% (Phase 01)
 
