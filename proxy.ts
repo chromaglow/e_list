@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
@@ -16,7 +18,42 @@ import { verifyAdminSession } from '@/lib/session'
  *   T-01-02: NextResponse.rewrite('/_not-found') — preserves URL, returns 404
  *   T-01-04: verifyAdminSession uses algorithms:['HS256'] — no alg:none or confusion
  *   T-01-05: /admin/login path is reachable without admin JWT (segments[2] !== 'login' guard)
+ *
+ * Token caching (T-03-15):
+ *   getInviteToken() reads from DB with 60s TTL; falls back to env.INVITE_TOKEN if no DB row.
  */
+
+// ── Module-level invite token cache (60s TTL) ──────────────────────────────
+let tokenCache: { value: string; expiresAt: number } | null = null
+const CACHE_TTL_MS = 60_000
+
+/**
+ * Returns the current invite token, preferring the DB-stored value with a 60s cache.
+ * Falls back to env.INVITE_TOKEN if the settings table has no invite_token row (Pitfall 6 guard).
+ */
+async function getInviteToken(): Promise<string> {
+  if (tokenCache && tokenCache.expiresAt > Date.now()) {
+    return tokenCache.value
+  }
+
+  // Dynamic imports avoid importing server-only modules at middleware module parse time
+  // and are valid in Node.js runtime middleware.
+  const { db } = await import('@/lib/db')
+  const { settings } = await import('@/lib/schema')
+  const { eq } = await import('drizzle-orm')
+
+  const row = await db
+    .select({ value: settings.value })
+    .from(settings)
+    .where(eq(settings.key, 'invite_token'))
+    .get()
+
+  // Fallback: if no DB row exists yet, use the env var (Pitfall 6 guard — T-03-15)
+  const value = row?.value ?? env.INVITE_TOKEN
+  tokenCache = { value, expiresAt: Date.now() + CACHE_TTL_MS }
+  return value
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -29,7 +66,7 @@ export async function proxy(request: NextRequest) {
   // timingSafeEqual throws if buffer lengths differ — catch and treat as mismatch
   let tokenMatch = false
   try {
-    const expectedToken = env.INVITE_TOKEN
+    const expectedToken = await getInviteToken()
     const a = Buffer.from(urlToken, 'hex')
     const b = Buffer.from(expectedToken, 'hex')
     if (urlToken.length === expectedToken.length && urlToken.length > 0) {
@@ -54,13 +91,16 @@ export async function proxy(request: NextRequest) {
     const payload = await verifyAdminSession(sessionCookie)
     if (!payload) {
       return NextResponse.redirect(
-        new URL(`/${env.INVITE_TOKEN}/admin/login`, request.url)
+        new URL(`/${await getInviteToken()}/admin/login`, request.url)
       )
     }
   }
 
   return NextResponse.next()
 }
+
+// Named alias so middleware.ts can re-export using the Next.js-required name
+export { proxy as middleware }
 
 /**
  * Matcher: apply proxy to ALL requests EXCEPT static assets.
