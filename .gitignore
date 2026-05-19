@@ -28,49 +28,7 @@ next-env.d.ts
 # Test output
 /coverage
 
-# Home-directory personal files (project lives in ~/ on dev machine)
-.bash_history
-.bash_logout
-.bashrc
-.bashrc.original
-.zshrc
-.zprofile
-.zsh_history
-.profile
-.dmrc
-.face
-.face.icon
-.gitconfig
-.sudo_as_admin_successful
-.ICEauthority
-.Xauthority
-.xsession-errors
-.xsession-errors.old
-.claude.json
-surfshark-install.sh
-
-# Home-directory folders
-.cache/
-.config/
-.java/
-.local/
-.mozilla/
-.npm/
-.nvsdkm/
-.pki/
-.surfshark/
-.claude/
-bin/
-Desktop/
-Documents/
-Downloads/
-Music/
-Pictures/
-Public/
-!public/
-Templates/
-Videos/
-
-# Claude / GSD internal
-.planning/agent-history.json
-.planning/current-agent-id.txt
+# Internal dev artifacts
+.planning/
+NEXT.md
+CLAUDE.md

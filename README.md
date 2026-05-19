@@ -58,5 +58,4 @@ INVITE_TOKEN=<token> scripts/cold-start-verify.sh <production-url>
 
 ## Project Status
 
-- Roadmap: [.planning/ROADMAP.md](.planning/ROADMAP.md)
-- State: [.planning/STATE.md](.planning/STATE.md)
+Feature-complete v1. See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture decisions and contribution guidelines.
