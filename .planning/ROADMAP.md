@@ -45,7 +45,7 @@
 
 **Wave 1** *(foundations — run in parallel)*
 - [x] 03-01-PLAN.md — Schema extensions + service functions (settings table, getListingsByFilter, markListingTaken, deleteListingAdmin, settings-service)
-- [ ] 03-02-PLAN.md — Client Component islands (MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm)
+- [x] 03-02-PLAN.md — Client Component islands (MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 03-03-PLAN.md — Route handlers (PATCH/DELETE /listings/[id], POST /admin/api/regen-invite)

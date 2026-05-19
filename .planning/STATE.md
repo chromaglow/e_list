@@ -9,7 +9,7 @@ progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 16
-  completed_plans: 8
+  completed_plans: 9
   percent: 50
 ---
 
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 ## Current Position
 
-Phase: 03 (mark-taken-admin-delete) — IN PROGRESS (1/5 plans complete)
-Status: Executing Phase 03 Wave 1 — 03-01 complete, 03-02 pending
-Last activity: 2026-05-18 -- 03-01 complete: settings table, getListingsByFilter, markListingTaken, deleteListingAdmin, settings-service
+Phase: 03 (mark-taken-admin-delete) — IN PROGRESS (2/5 plans complete)
+Status: Executing Phase 03 Wave 1 — 03-01 and 03-02 complete, 03-03 pending
+Last activity: 2026-05-18 -- 03-02 complete: MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm client islands
 
 Progress: [██████████] 100% (Phase 01)
 
@@ -90,5 +90,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-05-18T00:00:00Z
-Stopped at: Completed 03-01-PLAN.md
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
