@@ -3,12 +3,19 @@
 
 import Image from 'next/image'
 import type { Listing } from '@/lib/schema'
+import MarkTakenButton from './MarkTakenButton'
+import AdminDeleteButton from './AdminDeleteButton'
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function ListingCard({ listing }: { listing: Listing }) {
+interface Props {
+  listing: Listing
+  token: string
+  isAdmin: boolean
+}
+export default function ListingCard({ listing, token, isAdmin }: Props) {
   return (
     <article className="rounded-lg border bg-card shadow-sm overflow-hidden">
       {/* Photo */}
@@ -59,6 +66,11 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         >
           {formatDate(listing.created_at)}
         </time>
+
+        <div className="mt-3 flex gap-2">
+          <MarkTakenButton listingId={listing.id} token={token} />
+          {isAdmin && <AdminDeleteButton listingId={listing.id} token={token} />}
+        </div>
       </div>
     </article>
   )
