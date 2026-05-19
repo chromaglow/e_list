@@ -9,16 +9,7 @@ export default function AppHeader({ token }: { token: string }) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-screen-sm px-4 py-3 flex items-center justify-between">
-        <div className="flex flex-col gap-0.5">
-          <Link href={`/${token}`} className="text-lg font-semibold tracking-tight">FriendSwap</Link>
-          <a
-            href="https://buymeacoffee.com/chromaglow"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Support FriendSwap"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >Donate</a>
-        </div>
+        <Link href={`/${token}`} className="text-lg font-semibold tracking-tight">FriendSwap</Link>
         <a href="https://youtu.be/bM01Al2SWx4?si=u2S-cgktKoRv3RLQ" target="_blank" rel="noopener noreferrer">
           <img src="/header.png" alt="" className="h-16 w-auto object-contain mix-blend-multiply dark:mix-blend-screen" />
         </a>
@@ -26,6 +17,13 @@ export default function AppHeader({ token }: { token: string }) {
           Post an item
         </Link>
       </div>
+      <a
+        href="https://buymeacoffee.com/chromaglow"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Support FriendSwap"
+        className="absolute top-0 left-0 px-4 py-3 text-lg font-semibold tracking-tight"
+      >Donate</a>
       <Link
         href={`/${token}/admin/login`}
         className="absolute top-0 right-0 w-6 h-6 opacity-0"
