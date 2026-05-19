@@ -44,7 +44,7 @@
 **Plans:** 5 plans in 3 waves
 
 **Wave 1** *(foundations — run in parallel)*
-- [ ] 03-01-PLAN.md — Schema extensions + service functions (settings table, getListingsByFilter, markListingTaken, deleteListingAdmin, settings-service)
+- [x] 03-01-PLAN.md — Schema extensions + service functions (settings table, getListingsByFilter, markListingTaken, deleteListingAdmin, settings-service)
 - [ ] 03-02-PLAN.md — Client Component islands (MarkTakenButton, AdminDeleteButton, FilterTabs, RegenInviteForm)
 
 **Wave 2** *(blocked on Wave 1 completion)*
