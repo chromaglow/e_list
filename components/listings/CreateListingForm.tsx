@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { isAllowedMagicBytes } from '@/lib/upload-validators'
 import { Button } from '@/components/ui/button'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, RotateCcw, RotateCw } from 'lucide-react'
+import { rotateFile } from '@/lib/rotate-file'
 
 export default function CreateListingForm({ token }: { token: string }) {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0)
 
   const fileRef = useRef<File | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -26,9 +28,11 @@ export default function CreateListingForm({ token }: { token: string }) {
     if (file) {
       fileRef.current = file
       setPreviewUrl(URL.createObjectURL(file))
+      setRotation(0)
     } else {
       fileRef.current = null
       setPreviewUrl(null)
+      setRotation(0)
     }
   }
 
@@ -49,7 +53,7 @@ export default function CreateListingForm({ token }: { token: string }) {
     setError(null)
 
     try {
-      // Step 1: Magic byte validation
+      // Step 1: Magic byte validation (always on original file)
       if (fileRef.current) {
         const head = new Uint8Array(await fileRef.current.slice(0, 12).arrayBuffer())
         if (!isAllowedMagicBytes(head)) {
@@ -61,14 +65,23 @@ export default function CreateListingForm({ token }: { token: string }) {
       // Step 2: Upload via server route (server calls Vercel Blob directly)
       let photoUrl: string | undefined
       if (fileRef.current) {
+        let fileToUpload: File = fileRef.current
+        if (rotation !== 0) {
+          try {
+            fileToUpload = await rotateFile(fileRef.current, rotation)
+          } catch {
+            // canvas rotation failed — fall back to original file
+          }
+        }
+
         try {
           const uploadRes = await fetch(`/${token}/api/upload`, {
             method: 'POST',
-            body: fileRef.current,
+            body: fileToUpload,
             headers: {
-              'x-upload-content-type': fileRef.current.type,
-              'x-upload-filename': fileRef.current.name,
-              'x-upload-size': String(fileRef.current.size),
+              'x-upload-content-type': fileToUpload.type,
+              'x-upload-filename': fileToUpload.name,
+              'x-upload-size': String(fileToUpload.size),
             },
           })
           if (!uploadRes.ok) {
@@ -122,6 +135,7 @@ export default function CreateListingForm({ token }: { token: string }) {
         fileRef.current = null
         if (previewUrl) URL.revokeObjectURL(previewUrl)
         setPreviewUrl(null)
+        setRotation(0)
         formRef.current?.reset()
       }, 3000)
     } catch {
@@ -228,21 +242,53 @@ export default function CreateListingForm({ token }: { token: string }) {
             name="photo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            capture="environment"
             onChange={handleFileChange}
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs file:font-normal file:text-foreground cursor-pointer"
           />
           <p className="text-xs text-muted-foreground">JPEG, PNG, or WebP · max 8 MB</p>
         </div>
 
-        {/* Image preview */}
+        {/* Image preview + rotate controls */}
         {previewUrl && (
-          <div className="mt-2 overflow-hidden rounded-lg">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="w-full aspect-[4/3] object-cover"
-            />
+          <div className="space-y-2">
+            <div className="mt-2 rounded-lg overflow-hidden border flex items-center justify-center bg-muted/30 min-h-24">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-w-full max-h-72 object-contain"
+                style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.2s ease' }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setRotation(prev => ((prev + 270) % 360) as 0 | 90 | 180 | 270)}
+                aria-label="Rotate photo 90 degrees left"
+                className="flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+              >
+                <RotateCcw className="size-3.5" />
+                Rotate left
+              </button>
+              <button
+                type="button"
+                onClick={() => setRotation(prev => ((prev + 90) % 360) as 0 | 90 | 180 | 270)}
+                aria-label="Rotate photo 90 degrees right"
+                className="flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+              >
+                <RotateCw className="size-3.5" />
+                Rotate right
+              </button>
+              {rotation !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRotation(0)}
+                  aria-label="Reset rotation"
+                  className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
         )}
 
