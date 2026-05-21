@@ -54,7 +54,7 @@ export default function ListingCard({ listing, token, isAdmin, priority = false 
         </div>
 
         {/* Description */}
-        <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           {listing.description}
         </p>
 
