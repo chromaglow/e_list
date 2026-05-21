@@ -241,7 +241,7 @@ export default function CreateListingForm({ token }: { token: string }) {
             id="photo"
             name="photo"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*"
             onChange={handleFileChange}
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm text-muted-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs file:font-normal file:text-foreground cursor-pointer"
           />
